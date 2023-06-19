@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.Date;
 
 @Data
-public class CompleteClientRegistrationDto {
+public class CompleteRegistrationDto {
 
     @NotBlank(message = "Token cannot be blank")
     private String token;

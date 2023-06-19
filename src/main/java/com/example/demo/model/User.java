@@ -23,6 +23,7 @@ public class User extends Person{
     private String nextOfKinFirstName;
     private String nextOfKinLastName;
     private String address;
+    private Long staffId;
     private String nextOfKinPhoneNumber;
     private String nextOfKinAddress;
     private String stateOfOrigin;

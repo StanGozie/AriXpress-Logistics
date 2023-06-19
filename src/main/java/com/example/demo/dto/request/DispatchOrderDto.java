@@ -7,4 +7,5 @@ public class DispatchOrderDto {
 
     private String riderName;
     private String riderPhoneNumber;
+    private Long riderId;
 }

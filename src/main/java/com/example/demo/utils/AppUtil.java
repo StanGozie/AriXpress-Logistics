@@ -99,7 +99,7 @@ public class AppUtil {
 
     public Long generateRandomCode(){
         Random rnd = new Random();
-        Long number = (long) rnd.nextInt(999999);
+        Long number = (long) rnd.nextInt(999);
         return  number;
     }
 

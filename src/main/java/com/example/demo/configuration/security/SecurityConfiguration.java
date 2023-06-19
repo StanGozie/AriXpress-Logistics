@@ -24,6 +24,7 @@ public class SecurityConfiguration {
     @Qualifier("customAuthenticationEntryPoint")
     AuthenticationEntryPoint authEntryPoint;
     private final String path = "/api/v1/auth";
+    private final String path2 = "/api/v1/auth/client";
     private final String[] AUTH_WHITELIST = {
 //            path +"/login/**", path + "/forgot-password", path + "/change-password",
 //            path + "/register", path + "/verify-code", path + "/references",
@@ -35,22 +36,17 @@ public class SecurityConfiguration {
             path + "/reset-password/**",
             path + "/verify-token/**",
             path + "/complete-registration/**",
-            path + "/admin/sign-up",
-            path + "/admin/login",
-            path + "/admin/forgot-password",
-            path + "/admin/reset-password/**",
-            path + "/admin/complete-registration",
             path + "/sign-up",
             path + "/login",
             path + "/forgot-password",
             path + "/reset-password/**",
             path + "/complete-registration",
-            path + "/staff/sign-up",
-            path + "/staff/login",
-            path + "/staff/complete-staff-registration",
-            path + "/staff/login",
-            path + "/staff/forgot-password",
-            path + "/staff/reset-password"
+            path2 + "/complete-registration/**",
+            path2 + "/sign-up",
+            path2 + "/login",
+            path2 + "/forgot-password",
+            path2 + "/reset-password/**",
+            path2 + "/complete-registration",
     };
 
     private final JwtAuthFilter jwtAuthFilter;

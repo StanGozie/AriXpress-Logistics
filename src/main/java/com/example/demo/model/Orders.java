@@ -35,6 +35,7 @@ public class Orders extends Base{
     private String itemType;
     private int itemQuantity;
     private String riderName;
+    private Long riderId;
     private String riderPhoneNumber;
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;

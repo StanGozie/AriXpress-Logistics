@@ -1,13 +1,38 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.request.*;
+import com.example.demo.dto.request.AssignRiderToBikeDto;
+import com.example.demo.dto.request.ChangePasswordDto;
+import com.example.demo.dto.request.CompleteRegistrationDto;
+import com.example.demo.dto.request.DispatchOrderDto;
+import com.example.demo.dto.request.LoginDto;
+import com.example.demo.dto.request.RegisterBikeDto;
+import com.example.demo.dto.request.RegisterRiderDto;
+import com.example.demo.dto.request.ResetPasswordDto;
+import com.example.demo.dto.request.SignUpDto;
+import com.example.demo.dto.request.StaffRelevantDetailsDto;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.enums.OrderStatus;
+import com.example.demo.model.Orders;
+import com.example.demo.model.User;
 import com.example.demo.service.StaffService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import com.example.demo.service.CustomerService;
+import com.lowagie.text.Document;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @RestController
@@ -16,54 +41,102 @@ public class StaffController {
 
     private final StaffService staffService;
 
-    @PostMapping("/staff/sign-up")
-    ApiResponse signUp(@RequestBody StaffSignUpDto staffSignUpDto){
-        return staffService.signUp(staffSignUpDto);
+//    private final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<ApiResponse> signUp(@Valid @RequestBody SignUpDto signUpDto) {
+//        logger.info("====> Request body comes here {}", signUpDto);
+        System.out.println("Request body comes here " + signUpDto.toString());
+        return staffService.signUp(signUpDto);
+    }
+    @PostMapping("/update-staff-info")
+    public ResponseEntity<ApiResponse> updateStaffInformation(StaffRelevantDetailsDto staffRelevantDetailsDto) {
+    return staffService.updateStaffInformation(staffRelevantDetailsDto);
     }
 
-    @PostMapping("/staff/complete-staff-registration")
-    ApiResponse completeRegistration(@Valid @RequestBody CompleteClientRegistrationDto completeClientRegistrationDto){
-        return staffService.completeRegistration(completeClientRegistrationDto);
+        @PostMapping("/complete-registration")
+    public ResponseEntity<ApiResponse> completeRegistration(@Valid @RequestBody CompleteRegistrationDto completeRegistrationDto) {
+        return staffService.completeRegistration(completeRegistrationDto);
     }
 
-    @PostMapping("/staff/login")
-    public String login(@RequestBody @Valid LoginDto loginDto){
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@Valid @RequestBody LoginDto loginDto) {
         return staffService.login(loginDto);
     }
 
-    @PostMapping("/staff/forgot-password")
-    public ApiResponse forgotPassword(@RequestBody @Valid String email) {
-    return staffService.forgotPassword(email);
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody String email) {
+        return staffService.forgotPassword(email);
     }
 
-    @PatchMapping("/staff/reset-password")
-    public ApiResponse resetPassword(@RequestBody @Valid ResetPasswordDto resetPasswordDto) {
-    return staffService.resetPassword(resetPasswordDto);
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestBody ResetPasswordDto resetPasswordDto) {
+        return staffService.resetPassword(resetPasswordDto);
     }
 
-    @PatchMapping("/staff/change-password")
-    public ApiResponse changePassword(@RequestBody @Valid ChangePasswordDto changePasswordDto) {
-    return staffService.changePassword(changePasswordDto);
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(@RequestBody ChangePasswordDto changePasswordDto) {
+        return staffService.changePassword(changePasswordDto);
     }
 
-    @PatchMapping("/staff/assign-rider-to-bike")
-    public ApiResponse assignRiderToBike(@RequestBody @Valid String email, String bikeNumber) {
-    return staffService.assignRiderToBike(email, bikeNumber);
+    @PostMapping("/dispatch-order")
+    public ResponseEntity<Document> dispatchOrder(@PathVariable Long orderId, HttpServletResponse response, @RequestBody DispatchOrderDto dispatchOrderDto) throws IOException {
+        return staffService.dispatchOrder(orderId, response, dispatchOrderDto);
     }
 
-    @PostMapping("/staff/register-bike")
-    public ApiResponse registerABike(@RequestBody @Valid RegisterBikeDto registerBikeDto) {
-    return staffService.registerABike(registerBikeDto);
+    @PostMapping("/register-bike")
+    public ResponseEntity<ApiResponse> registerABike(@RequestBody RegisterBikeDto registerBikeDto) {
+        return staffService.registerABike(registerBikeDto);
+    }
+
+    @PatchMapping("/make-staff")
+    public ApiResponse changeRoleToStaff(@PathVariable String email) {
+        return staffService.changeRoleToStaff(email);
+    }
+
+    @PatchMapping("/assign-bike")
+    public ApiResponse assignBikeToRider(@RequestBody AssignRiderToBikeDto assignRiderToBikeDto) {
+        return staffService.assignRiderToBike(assignRiderToBikeDto);
+    }
+
+    @GetMapping("/view-order-by-id")
+    public Optional<Orders> viewAnOrderById(@PathVariable Long orderId) {
+        return staffService.viewAnOrderById(orderId);
+    }
+
+    @GetMapping("/view-orders-by-status")
+    List<Orders> viewAllOrdersByStatus(@PathVariable OrderStatus orderStatus) {
+        return staffService.viewAllOrdersByStatus(orderStatus);
+    }
+
+    @GetMapping("/count-trips")
+    Integer countRidesPerRider(@PathVariable Long staffId){
+        return staffService.countRidesPerRider(staffId);
+    }
+
+    @GetMapping("/view-all-orders")
+    public List<Orders> viewAllOrders() {
+        return staffService.viewAllOrders();
+    }
+
+    @PostMapping("/create-admin")
+    public ResponseEntity<ApiResponse> createAdmin(@PathVariable Long staffId) {
+    return staffService.createAdmin(staffId);
+    }
+
+    @DeleteMapping("/delete-staff")
+    public ResponseEntity<ApiResponse> deleteStaff(@PathVariable Long staffId) {
+    return staffService.deleteStaff(staffId);
+    }
+
+    @GetMapping("/view-staff-details")
+    public Optional<User> viewStaffDetails(@PathVariable Long staffId) {
+        return staffService.viewStaffDetails(staffId);
     }
 
     @PostMapping("/register-rider")
-    public ApiResponse registerARider(@RequestBody @Valid RegisterRiderDto registerRiderDto) {
-    return staffService.registerARider(registerRiderDto);
+    public ApiResponse registerARider(RegisterRiderDto registerRiderDto) {
+        return staffService.registerARider(registerRiderDto);
     }
 
-    @GetMapping("/count-rider-trips")
-    public Integer countRidesPerRider(@PathVariable String phoneNumber) {
-    return staffService.countRidesPerRider(phoneNumber);
     }
-
-}

@@ -44,49 +44,49 @@ public class CustomerServiceImplementation implements CustomerService {
 
 
     @Override
-    public ResponseEntity<ApiResponse> signUp(CustomerSignUpDto customerSignUpDto) throws ValidationException {
+    public ResponseEntity<ApiResponse> signUp(SignUpDto signUpDto) throws ValidationException {
 
-        if (!appUtil.isValidEmail(customerSignUpDto.getEmail()))
+        if (!appUtil.isValidEmail(signUpDto.getEmail()))
             throw new ValidationException("Email is invalid");
 
-        Boolean isUserExist = userRepository.existsByEmail(customerSignUpDto.getEmail());
+        Boolean isUserExist = userRepository.existsByEmail(signUpDto.getEmail());
         if (isUserExist)
             throw new ValidationException("User Already Exists!");
 
-        if(!(customerSignUpDto.getConfirmPassword().equals(customerSignUpDto.getPassword())))
+        if(!(signUpDto.getConfirmPassword().equals(signUpDto.getPassword())))
             throw new InputMismatchException("Confirm password and Password do not match!");
 
         User user = new User();
-        user.setFirstName(customerSignUpDto.getFirstName());
-        user.setLastName(customerSignUpDto.getLastName());
-        user.setEmail(customerSignUpDto.getEmail());
-        user.setPassword(passwordEncoder.encode(customerSignUpDto.getPassword()));
+        user.setFirstName(signUpDto.getFirstName());
+        user.setLastName(signUpDto.getLastName());
+        user.setEmail(signUpDto.getEmail());
+        user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
         user.setRole((Role.ROLE_CUSTOMER));
-        String token = jwtUtils.generateSignUpConfirmationToken(customerSignUpDto.getEmail());
+        String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
         user.setConfirmationToken(token);
         userRepository.save(user);
 
         String URL = "http://localhost:8080/api/v1/auth/complete-registration/?token=" + token;
-        String link = "<h3>Hello "  + customerSignUpDto.getFirstName()  +"<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
+        String link = "<h3>Hello "  + signUpDto.getFirstName()  +"<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
 
-        emailService.sendEmail(customerSignUpDto.getEmail(),"AriXpress: Verify Your Account", link);
+        emailService.sendEmail(signUpDto.getEmail(),"AriXpress: Verify Your Account", link);
 
         return ResponseEntity.ok(new ApiResponse<>("Successful", "SignUp Successful. Check your mail to activate your account", null));
     }
 
     @Override
-    public ResponseEntity<ApiResponse> completeRegistration(CompleteClientRegistrationDto completeClientRegistrationDto) {
-        Optional<User> existingUser = userRepository.findByConfirmationToken(completeClientRegistrationDto.getToken());
+    public ResponseEntity<ApiResponse> completeRegistration(CompleteRegistrationDto completeRegistrationDto) {
+        Optional<User> existingUser = userRepository.findByConfirmationToken(completeRegistrationDto.getToken());
 
         if (existingUser.isPresent()) {
             if (existingUser.get().isActive()) {
                 throw new AccountAlreadyActivatedException("This account is already activated. Pls login");
             }
-            existingUser.get().setDob(completeClientRegistrationDto.getDob());
-            existingUser.get().setAddress(completeClientRegistrationDto.getAddress());
-            existingUser.get().setPhoneNumber(completeClientRegistrationDto.getPhoneNumber());
-            existingUser.get().setState(completeClientRegistrationDto.getState());
-            existingUser.get().setGender(completeClientRegistrationDto.getGender());
+            existingUser.get().setDob(completeRegistrationDto.getDob());
+            existingUser.get().setAddress(completeRegistrationDto.getAddress());
+            existingUser.get().setPhoneNumber(completeRegistrationDto.getPhoneNumber());
+            existingUser.get().setState(completeRegistrationDto.getState());
+            existingUser.get().setGender(completeRegistrationDto.getGender());
             existingUser.get().setActive(true);
             userRepository.save(existingUser.get());
             return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", null));

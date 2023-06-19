@@ -2,32 +2,64 @@ package com.example.demo.service;
 
 import com.example.demo.dto.request.*;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.enums.OrderStatus;
 import com.example.demo.model.Orders;
-import org.springframework.stereotype.Service;
+import com.example.demo.model.User;
+import com.lowagie.text.Document;
+import org.springframework.http.ResponseEntity;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
-@Service
 public interface StaffService {
 
-    ApiResponse signUp(StaffSignUpDto staffSignUpDto);
+    ResponseEntity<ApiResponse> signUp (SignUpDto signUpDto);
 
-    ApiResponse completeRegistration (CompleteClientRegistrationDto completeClientRegistrationDto);
+    ResponseEntity<ApiResponse> completeRegistration (CompleteRegistrationDto completeRegistrationDto);
 
-    String login (LoginDto loginDto);
+    ResponseEntity<ApiResponse> updateStaffInformation (StaffRelevantDetailsDto staffRelevantDetailsDto);
 
-    ApiResponse forgotPassword (String email);
+    ResponseEntity<String> login (LoginDto loginDto);
 
-    ApiResponse resetPassword (ResetPasswordDto resetPasswordDto);
+    ResponseEntity<ApiResponse> forgotPassword (String email);
 
-    ApiResponse changePassword (ChangePasswordDto changePasswordDto);
+    ResponseEntity<ApiResponse> resetPassword (ResetPasswordDto resetPasswordDto);
 
-    ApiResponse assignRiderToBike(String email, String bikeNumber);
+    ResponseEntity<ApiResponse> changePassword (ChangePasswordDto changePasswordDto);
 
-    ApiResponse registerABike(RegisterBikeDto registerBikeDto);
+    ResponseEntity<Document>  dispatchOrder(Long orderId, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
 
-    ApiResponse registerARider(RegisterRiderDto registerRiderDto);
+    ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto);
 
-    Integer countRidesPerRider (String phoneNumber);
+    public ApiResponse registerARider(RegisterRiderDto registerRiderDto);
+
+    ApiResponse changeRoleToStaff (String email);
+
+    ApiResponse assignRiderToBike(AssignRiderToBikeDto assignRiderToBikeDto);
+
+    Optional<Orders> viewAnOrderById (Long orderId);
+
+    List<Orders> viewAllOrdersByStatus (OrderStatus orderStatus);
+
+    Integer countRidesPerRider(Long staffId);
+
+    Optional<User> viewStaffDetails(Long staffId);
+
+    ResponseEntity<ApiResponse> deleteStaff (Long staffId);
+
+    ResponseEntity<ApiResponse> createAdmin(Long staffId);
+
+    List<Orders> viewAllOrders();
+
+    ResponseEntity<ApiResponse> viewAllOrdersToday (Date date);
+
+    ResponseEntity<ApiResponse> viewAllOrdersByMonth (String month);
+
+    ResponseEntity<ApiResponse> viewAllOrdersByWeek();
 
 }
+
+

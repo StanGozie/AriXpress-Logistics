@@ -1,11 +1,15 @@
 package com.example.demo.dto.request;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 @Data
-public class CustomerSignUpDto {
+@AllArgsConstructor
+@NoArgsConstructor
+public class SignUpDto {
 
     @NotBlank(message = "Firstname cannot be blank")
     private String firstName;

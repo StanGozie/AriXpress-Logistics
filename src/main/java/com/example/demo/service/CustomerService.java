@@ -2,13 +2,16 @@ package com.example.demo.service;
 
 import com.example.demo.dto.request.*;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.model.Orders;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Optional;
 
 public interface CustomerService {
 
-    ResponseEntity<ApiResponse> signUp (CustomerSignUpDto customerSignUpDto);
+    ResponseEntity<ApiResponse> signUp (SignUpDto signUpDto);
 
-    ResponseEntity<ApiResponse> completeRegistration (CompleteClientRegistrationDto completeClientRegistrationDto);
+    ResponseEntity<ApiResponse> completeRegistration (CompleteRegistrationDto completeRegistrationDto);
 
     ResponseEntity<String> login (LoginDto loginDto);
 

@@ -12,7 +12,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
     Optional<Orders> findById(Long id);
     Optional<Orders> findByEmailAndId(String email, Long id);
     List<Orders> findByOrderStatus(OrderStatus orderStatus);
-    List<Orders> findByRiderPhoneNumber (String phoneNumber);
+    List<Orders> findByRiderId (Long staffId);
 
 
 }
