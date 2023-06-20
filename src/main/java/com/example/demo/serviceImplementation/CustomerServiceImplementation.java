@@ -26,7 +26,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -56,12 +58,34 @@ public class CustomerServiceImplementation implements CustomerService {
         if(!(signUpDto.getConfirmPassword().equals(signUpDto.getPassword())))
             throw new InputMismatchException("Confirm password and Password do not match!");
 
+        Boolean registerAsACompany = signUpDto.getRegisterAsACompany();
+
+        if(registerAsACompany.equals(true)){
+
+            User user = new User();
+            user.setFirstName(signUpDto.getFirstName());
+            user.setLastName(signUpDto.getLastName());
+            user.setEmail(signUpDto.getEmail());
+            user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
+            user.setRole((Role.ROLE_CUSTOMER));
+            user.setCustomerType(CustomerType.Corporate);
+            String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
+            user.setConfirmationToken(token);
+            userRepository.save(user);
+
+            String URL = "http://localhost:8080/api/v1/auth/complete-business-registration/?token=" + token;
+            String link = "<h3>Hello "  + signUpDto.getFirstName()  +"<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
+
+            emailService.sendEmail(signUpDto.getEmail(),"AriXpress: Verify Your Account", link);
+        }
+
         User user = new User();
         user.setFirstName(signUpDto.getFirstName());
         user.setLastName(signUpDto.getLastName());
         user.setEmail(signUpDto.getEmail());
         user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
         user.setRole((Role.ROLE_CUSTOMER));
+        user.setCustomerType(CustomerType.Individual);
         String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
         user.setConfirmationToken(token);
         userRepository.save(user);
@@ -82,17 +106,44 @@ public class CustomerServiceImplementation implements CustomerService {
             if (existingUser.get().isActive()) {
                 throw new AccountAlreadyActivatedException("This account is already activated. Pls login");
             }
+            Long clientCode = appUtil.generateRandomCode();
             existingUser.get().setDob(completeRegistrationDto.getDob());
             existingUser.get().setAddress(completeRegistrationDto.getAddress());
             existingUser.get().setPhoneNumber(completeRegistrationDto.getPhoneNumber());
             existingUser.get().setState(completeRegistrationDto.getState());
             existingUser.get().setGender(completeRegistrationDto.getGender());
+            existingUser.get().setClientCode(Long.valueOf("IC-"+clientCode)); //IC stands for Individual Customer
             existingUser.get().setActive(true);
             userRepository.save(existingUser.get());
             return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", null));
         }
         return ResponseEntity.ok(new ApiResponse<>("Failed", "This user does not exist. Kindly sign up.", null));
     }
+
+    @Override
+    public ApiResponse completeBusinessRegistration(CompleteBusinessRegistrationDto completeBusinessRegistrationDto) {
+        Optional<User> existingUser = userRepository.findByConfirmationToken(completeBusinessRegistrationDto.getToken());
+
+        Long clientCode = appUtil.generateRandomCode();
+
+        if(existingUser.isPresent()){
+            if(existingUser.get().isActive()) {
+                throw new AccountAlreadyActivatedException("This account has been activated. Please login");
+            }
+        existingUser.get().setCompanyName(completeBusinessRegistrationDto.getCompanyName());
+        existingUser.get().setAddress(completeBusinessRegistrationDto.getAddress());
+        existingUser.get().setPaymentType(completeBusinessRegistrationDto.getPaymentType());
+        existingUser.get().setPaymentInterval(completeBusinessRegistrationDto.getPaymentInterval());
+        existingUser.get().setClientCode(Long.valueOf("CE-"+clientCode)); //CE stands for Corporate Entity
+        userRepository.save(existingUser.get());
+        }
+        return ApiResponse.builder()
+                .status("Successful")
+                .message("Corporate Client Registration Successful.")
+                .data("You unique code is "+ clientCode)
+                .build();
+    }
+
     @Override
     public ResponseEntity<String> login(LoginDto loginDto) {
 
@@ -159,6 +210,18 @@ public class CustomerServiceImplementation implements CustomerService {
         User user = appUtil.getLoggedInUser();
         String email = user.getEmail();
 
+        if(user.getCustomerType().equals(CustomerType.Corporate)) {
+            Orders orders = new Orders();
+            orders.setCustomerId(user.getClientCode());
+            orders.setCompanyName(user.getCompanyName());
+            orders.setPickUpAddress(user.getAddress());
+            orders.setDeliveryAddress(directDeliveryDto.getDeliveryAddress());
+            orders.setReceiverName(directDeliveryDto.getReceiverName());
+            orders.setReceiverPhoneNumber(directDeliveryDto.getReceiverPhoneNumber());
+            orders.setItemType(directDeliveryDto.getItemType());
+            orders.setItemQuantity(directDeliveryDto.getItemQuantity());
+            orders.setOrderStatus(OrderStatus.PENDING);
+        }
         Orders orders = new Orders();
         orders.setCustomerId(user.getId());
         orders.setCustomerFirstName(user.getFirstName());
@@ -176,7 +239,7 @@ public class CustomerServiceImplementation implements CustomerService {
 
         String URL = "http://localhost:8080/api/v1/auth/new-order/?order=" + orders.getId();
         String link = "<h3>Hello " +"<br> Click the link below dispatch the new order <a href=" + URL + "><br>Activate</a></h3>";
-        emailService.sendEmail("chigozieenyoghasi@yahoo.com","AriXpress: A new order", link);
+        emailService.sendEmail(email,"AriXpress: A new order", link);
 
         return ResponseEntity.ok(new ApiResponse<>("Success", "Delivery booked successfully. Details to be sent to you shortly.", null));
 
@@ -254,6 +317,29 @@ public class CustomerServiceImplementation implements CustomerService {
         order.get().setFeedback(giveFeedbackDto.getFeedback());
         orderRepository.save(order.get());
         return ResponseEntity.ok(new ApiResponse<>("Success", "Feedback Received. Thank you.", null));
+    }
+
+    @Override
+    public List<Optional<Orders>> weeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
+        User user = appUtil.getLoggedInUser();
+        Long id = user.getClientCode();
+        if(!(user.getRole().equals(Role.ROLE_CUSTOMER) && user.getCustomerType().equals(CustomerType.Corporate)))
+            throw new javax.validation.ValidationException("You are not authorised to perform this action");
+
+        List<Optional<Orders>> ordersList = new ArrayList<>();
+
+        Optional<Orders> orders1 = orderRepository.findByClientId(id);
+        if(orders1.isPresent()){
+            if(orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getStartDate())||
+               orders1.get().getCreatedAt().isAfter(weeklyOrderSummaryDto.getStartDate()) ||
+               orders1.get().getCreatedAt().isBefore(weeklyOrderSummaryDto.getEndDate()) ||
+               orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getEndDate()))
+               ordersList.add(orders1);
+        }
+        else {
+            throw new Exception("Some error occurred");
+        }
+        return ordersList;
     }
 
     @Override

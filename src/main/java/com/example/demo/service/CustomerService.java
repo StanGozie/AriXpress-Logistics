@@ -1,10 +1,23 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.request.*;
+import com.example.demo.dto.request.CancelABookingDto;
+import com.example.demo.dto.request.ChangePasswordDto;
+import com.example.demo.dto.request.CompleteBusinessRegistrationDto;
+import com.example.demo.dto.request.CompleteRegistrationDto;
+import com.example.demo.dto.request.DirectDeliveryDto;
+import com.example.demo.dto.request.GiveFeedbackDto;
+import com.example.demo.dto.request.LoginDto;
+import com.example.demo.dto.request.ResetPasswordDto;
+import com.example.demo.dto.request.SignUpDto;
+import com.example.demo.dto.request.ThirdPartySenderDto;
+import com.example.demo.dto.request.UpdateOrderStatusDto;
+import com.example.demo.dto.request.ViewRiderLocationDto;
+import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.model.Orders;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CustomerService {
@@ -12,6 +25,8 @@ public interface CustomerService {
     ResponseEntity<ApiResponse> signUp (SignUpDto signUpDto);
 
     ResponseEntity<ApiResponse> completeRegistration (CompleteRegistrationDto completeRegistrationDto);
+
+    ApiResponse completeBusinessRegistration (CompleteBusinessRegistrationDto completeBusinessRegistrationDto);
 
     ResponseEntity<String> login (LoginDto loginDto);
 
@@ -30,6 +45,7 @@ public interface CustomerService {
     ResponseEntity<ApiResponse> updateOrderStatus(UpdateOrderStatusDto updateOrderStatusDto);
 
     ResponseEntity<ApiResponse> giveFeedback(GiveFeedbackDto giveFeedbackDto);
+    List<Optional<Orders>> weeklyOrderSummary (WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception;
 
     ResponseEntity<ApiResponse> viewRiderLocation (ViewRiderLocationDto viewRiderLocationDto);
 

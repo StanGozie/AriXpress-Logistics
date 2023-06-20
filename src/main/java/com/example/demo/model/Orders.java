@@ -24,6 +24,7 @@ public class Orders extends Base{
     private String customerLastName;
     private String email;
     private Long customerId;
+    private String companyName;
     private String pickUpAddress;
     private String deliveryAddress;
     private String receiverName;

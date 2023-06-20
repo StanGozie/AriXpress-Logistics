@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
 import com.example.demo.enums.Gender;
+import com.example.demo.enums.PaymentInterval;
+import com.example.demo.enums.PaymentType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,11 +17,14 @@ public abstract class Person extends Base{
 
     private String firstName;
     private String lastName;
+    private String companyName;
+    private PaymentInterval paymentInterval;
+    private PaymentType paymentType;
     private String email;
     private String password;
     private String phoneNumber;
     private String confirmationToken;
     @Enumerated(EnumType.STRING)
     private Gender gender;
-    private String state; //change to address or change to state of residence or remove totally
+    private String state;
 }

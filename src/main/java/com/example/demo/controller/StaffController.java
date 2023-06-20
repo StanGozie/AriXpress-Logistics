@@ -10,12 +10,12 @@ import com.example.demo.dto.request.RegisterRiderDto;
 import com.example.demo.dto.request.ResetPasswordDto;
 import com.example.demo.dto.request.SignUpDto;
 import com.example.demo.dto.request.StaffRelevantDetailsDto;
+import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.model.Orders;
 import com.example.demo.model.User;
 import com.example.demo.service.StaffService;
-import com.example.demo.service.CustomerService;
 import com.lowagie.text.Document;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -121,12 +121,12 @@ public class StaffController {
 
     @PostMapping("/create-admin")
     public ResponseEntity<ApiResponse> createAdmin(@PathVariable Long staffId) {
-    return staffService.createAdmin(staffId);
+        return staffService.createAdmin(staffId);
     }
 
     @DeleteMapping("/delete-staff")
     public ResponseEntity<ApiResponse> deleteStaff(@PathVariable Long staffId) {
-    return staffService.deleteStaff(staffId);
+        return staffService.deleteStaff(staffId);
     }
 
     @GetMapping("/view-staff-details")
@@ -135,8 +135,13 @@ public class StaffController {
     }
 
     @PostMapping("/register-rider")
-    public ApiResponse registerARider(RegisterRiderDto registerRiderDto) {
+    public ApiResponse registerARider(@Valid @RequestBody RegisterRiderDto registerRiderDto) {
         return staffService.registerARider(registerRiderDto);
     }
 
+    @GetMapping("/view-client-weekly-orders")
+    public List<Optional<Orders>> clientWeeklyOrderSummary(@PathVariable Long clientId, @Valid @RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
+        return staffService.clientWeeklyOrderSummary(clientId, weeklyOrderSummaryDto);
     }
+
+}

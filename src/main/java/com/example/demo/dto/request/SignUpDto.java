@@ -26,4 +26,6 @@ public class SignUpDto {
 
     @NotBlank(message = "confirm password cannot be blank")
     private String confirmPassword;
+
+    private Boolean registerAsACompany;
 }

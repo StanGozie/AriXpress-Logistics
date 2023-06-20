@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import com.example.demo.enums.CustomerType;
 import com.example.demo.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,5 +30,7 @@ public class User extends Person{
     private String stateOfOrigin;
     @Enumerated(EnumType.STRING)
     private Role role;
+    private CustomerType customerType;
+    private Long clientCode;
     private String dob;
 }

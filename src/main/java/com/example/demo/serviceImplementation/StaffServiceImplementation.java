@@ -5,6 +5,7 @@ import com.example.demo.configuration.security.CustomUserDetailService;
 import com.example.demo.configuration.security.JwtUtils;
 import com.example.demo.dto.request.*;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.enums.CustomerType;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.enums.PaymentType;
 import com.example.demo.enums.Role;
@@ -441,6 +442,26 @@ public class StaffServiceImplementation implements StaffService {
         }
         List<Orders> ordersList = new ArrayList<>();
                 ordersList.add((Orders) orderRepository.findAll());
+        return ordersList;
+    }
+
+    @Override
+    public List<Optional<Orders>> clientWeeklyOrderSummary(Long clientId, WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
+        User user = appUtil.getLoggedInUser();
+        if(!(user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_STAFF)))
+            throw new ValidationException("You are not authorised to perform this operation");
+
+        List<Optional<Orders>> ordersList = new ArrayList<>();
+        Optional<Orders> orders1 = orderRepository.findByClientId(clientId);
+        if(orders1.isPresent()){
+            if(orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getStartDate())||
+                    orders1.get().getCreatedAt().isAfter(weeklyOrderSummaryDto.getStartDate()) ||
+                    orders1.get().getCreatedAt().isBefore(weeklyOrderSummaryDto.getEndDate()) ||
+                    orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getEndDate()))
+                ordersList.add(orders1);
+        } else {
+            throw new Exception("Some error occurred");
+        }
         return ordersList;
     }
 
