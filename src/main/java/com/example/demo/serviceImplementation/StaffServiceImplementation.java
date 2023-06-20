@@ -452,7 +452,7 @@ public class StaffServiceImplementation implements StaffService {
             throw new ValidationException("You are not authorised to perform this operation");
 
         List<Optional<Orders>> ordersList = new ArrayList<>();
-        Optional<Orders> orders1 = orderRepository.findByClientId(clientId);
+        Optional<Orders> orders1 = orderRepository.findByClientCode(clientId);
         if(orders1.isPresent()){
             if(orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getStartDate())||
                     orders1.get().getCreatedAt().isAfter(weeklyOrderSummaryDto.getStartDate()) ||

@@ -140,8 +140,8 @@ public class StaffController {
     }
 
     @GetMapping("/view-client-weekly-orders")
-    public List<Optional<Orders>> clientWeeklyOrderSummary(@PathVariable Long clientId, @Valid @RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
-        return staffService.clientWeeklyOrderSummary(clientId, weeklyOrderSummaryDto);
+    public List<Optional<Orders>> clientWeeklyOrderSummary(@PathVariable Long clientCode, @Valid @RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
+        return staffService.clientWeeklyOrderSummary(clientCode, weeklyOrderSummaryDto);
     }
 
 }

@@ -23,7 +23,7 @@ public class Orders extends Base{
     private String customerFirstName;
     private String customerLastName;
     private String email;
-    private Long customerId;
+    private Long clientCode;
     private String companyName;
     private String pickUpAddress;
     private String deliveryAddress;

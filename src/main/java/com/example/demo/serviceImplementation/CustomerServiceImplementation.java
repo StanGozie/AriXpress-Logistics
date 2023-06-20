@@ -212,7 +212,7 @@ public class CustomerServiceImplementation implements CustomerService {
 
         if(user.getCustomerType().equals(CustomerType.Corporate)) {
             Orders orders = new Orders();
-            orders.setCustomerId(user.getClientCode());
+            orders.setClientCode(user.getClientCode());
             orders.setCompanyName(user.getCompanyName());
             orders.setPickUpAddress(user.getAddress());
             orders.setDeliveryAddress(directDeliveryDto.getDeliveryAddress());
@@ -223,7 +223,7 @@ public class CustomerServiceImplementation implements CustomerService {
             orders.setOrderStatus(OrderStatus.PENDING);
         }
         Orders orders = new Orders();
-        orders.setCustomerId(user.getId());
+        orders.setClientCode(user.getId());
         orders.setCustomerFirstName(user.getFirstName());
         orders.setCustomerLastName(user.getLastName());
         orders.setItemType(directDeliveryDto.getItemType());
@@ -253,7 +253,7 @@ public class CustomerServiceImplementation implements CustomerService {
 
         Orders order = new Orders();
         order.setThirdPartyPickUp(true);
-        order.setCustomerId(id);
+        order.setClientCode(id);
         order.setCustomerFirstName(user.getFirstName());
         order.setCustomerLastName(user.getLastName());
         order.setThirdPartyName(thirdPartySenderDto.getThirdPartyName());
@@ -328,7 +328,7 @@ public class CustomerServiceImplementation implements CustomerService {
 
         List<Optional<Orders>> ordersList = new ArrayList<>();
 
-        Optional<Orders> orders1 = orderRepository.findByClientId(id);
+        Optional<Orders> orders1 = orderRepository.findByClientCode(id);
         if(orders1.isPresent()){
             if(orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getStartDate())||
                orders1.get().getCreatedAt().isAfter(weeklyOrderSummaryDto.getStartDate()) ||

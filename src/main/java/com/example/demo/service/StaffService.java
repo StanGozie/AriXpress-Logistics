@@ -53,7 +53,7 @@ public interface StaffService {
     ResponseEntity<ApiResponse> createAdmin(Long staffId);
 
     List<Orders> viewAllOrders();
-    List<Optional<Orders>> clientWeeklyOrderSummary (Long clientId, WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception;
+    List<Optional<Orders>> clientWeeklyOrderSummary (Long clientCode, WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception;
 
     ResponseEntity<ApiResponse> viewAllOrdersToday (Date date);
 
