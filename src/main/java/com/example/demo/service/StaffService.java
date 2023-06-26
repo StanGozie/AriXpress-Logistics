@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.request.*;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
+import com.example.demo.enums.RiderStatus;
 import com.example.demo.model.Orders;
 import com.example.demo.model.User;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public interface StaffService {
 
     ResponseEntity<String> login (LoginDto loginDto);
 
-    ResponseEntity<ApiResponse> forgotPassword (String email);
+    ResponseEntity<ApiResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto);
 
     ResponseEntity<ApiResponse> resetPassword (ResetPasswordDto resetPasswordDto);
 
@@ -34,15 +35,15 @@ public interface StaffService {
 
     ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto);
 
-    public ApiResponse registerARider(RegisterRiderDto registerRiderDto);
+    ResponseEntity<ApiResponse> registerARider(RegisterRiderDto registerRiderDto);
 
-    ApiResponse changeRoleToStaff (MakeStaffDto makeStaffDto);
-
-    ApiResponse assignRiderToBike(AssignRiderToBikeDto assignRiderToBikeDto);
+    ApiResponse assignBikeToRider(AssignRiderToBikeDto assignRiderToBikeDto);
 
     Optional<Orders> viewAnOrderById (Long orderId);
 
     List<Orders> viewAllOrdersByStatus (OrderStatus orderStatus);
+
+    List<User> viewAllRidersByStatus (RiderStatus riderStatus);
 
     Integer countRidesPerRider(Long staffId);
 

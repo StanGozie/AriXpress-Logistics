@@ -60,7 +60,7 @@ public class AppUtil {
 
     public  String generateSerialNumber(String prefix) {
         Random rand = new Random();
-        long x = (long)(rand.nextDouble()*100000000000000L);
+        long x = (long)(rand.nextDouble()*100000000000L);
         return  prefix + String.format("%014d", x);
     }
 

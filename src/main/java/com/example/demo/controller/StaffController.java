@@ -4,9 +4,9 @@ import com.example.demo.dto.request.AssignRiderToBikeDto;
 import com.example.demo.dto.request.ChangePasswordDto;
 import com.example.demo.dto.request.CompleteRegistrationDto;
 import com.example.demo.dto.request.DispatchOrderDto;
-import com.example.demo.dto.request.OrdersHistoryDto;
+import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.LoginDto;
-import com.example.demo.dto.request.MakeStaffDto;
+import com.example.demo.dto.request.OrdersHistoryDto;
 import com.example.demo.dto.request.RegisterBikeDto;
 import com.example.demo.dto.request.RegisterRiderDto;
 import com.example.demo.dto.request.ResetPasswordDto;
@@ -15,6 +15,7 @@ import com.example.demo.dto.request.StaffRelevantDetailsDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
+import com.example.demo.enums.RiderStatus;
 import com.example.demo.model.Orders;
 import com.example.demo.model.User;
 import com.example.demo.service.StaffService;
@@ -67,8 +68,8 @@ public class StaffController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody String email) {
-        return staffService.forgotPassword(email);
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto forgotPasswordDto) {
+        return staffService.forgotPassword(forgotPasswordDto);
     }
 
     @PostMapping("/reset-password")
@@ -91,17 +92,17 @@ public class StaffController {
         return staffService.registerABike(registerBikeDto);
     }
 
-    @PatchMapping("/make-staff")
-    public ApiResponse changeRoleToStaff(@RequestBody MakeStaffDto makeStaffDto) {
-        return staffService.changeRoleToStaff(makeStaffDto);
-    }
-
     @PatchMapping("/assign-bike")
     public ApiResponse assignBikeToRider(@RequestBody AssignRiderToBikeDto assignRiderToBikeDto) {
-        return staffService.assignRiderToBike(assignRiderToBikeDto);
+        return staffService.assignBikeToRider(assignRiderToBikeDto);
     }
 
-    @GetMapping("/view-order-by-id/{orderId}")
+    @GetMapping("/view-busy-riders/{riderStatus}")
+    public List<User> viewAllRidersByStatus(@PathVariable RiderStatus riderStatus) {
+        return staffService.viewAllRidersByStatus(riderStatus);
+    }
+
+        @GetMapping("/view-order-by-id/{orderId}")
     public Optional<Orders> viewAnOrderById(@PathVariable Long orderId) {
         return staffService.viewAnOrderById(orderId);
     }
@@ -137,7 +138,7 @@ public class StaffController {
     }
 
     @PostMapping("/register-rider")
-    public ApiResponse registerARider(@Valid @RequestBody RegisterRiderDto registerRiderDto) {
+    public ResponseEntity<ApiResponse> registerARider(@Valid @RequestBody RegisterRiderDto registerRiderDto) {
         return staffService.registerARider(registerRiderDto);
     }
 

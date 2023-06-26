@@ -7,6 +7,7 @@ import com.example.demo.dto.request.AssignRiderToBikeDto;
 import com.example.demo.dto.request.ChangePasswordDto;
 import com.example.demo.dto.request.CompleteRegistrationDto;
 import com.example.demo.dto.request.DispatchOrderDto;
+import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.LoginDto;
 import com.example.demo.dto.request.MakeStaffDto;
 import com.example.demo.dto.request.OrdersHistoryDto;
@@ -19,9 +20,12 @@ import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.enums.PaymentType;
+import com.example.demo.enums.RiderStatus;
 import com.example.demo.enums.Role;
 import com.example.demo.exceptions.AccountAlreadyActivatedException;
+import com.example.demo.exceptions.ResourceAlreadyExistsException;
 import com.example.demo.exceptions.ResourceNotFoundException;
+import com.example.demo.exceptions.RiderUnavailableException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.exceptions.ValidationException;
 import com.example.demo.model.Bike;
@@ -92,7 +96,9 @@ public class StaffServiceImplementation implements StaffService {
         user.setLastName(signUpDto.getLastName());
         user.setEmail(signUpDto.getEmail());
         user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
-        user.setRole((Role.ROLE_ADMIN));
+        user.setRole(Role.STAFF);
+        if(signUpDto.getEmail().equals("chigoziestanleyenyoghasi@gmail.com") || signUpDto.getEmail().equals("chigozieenyoghasi@yahoo.com")){
+            user.setRole(Role.SUPER_ADMIN);}
         user.setStaffId(staffId);
         String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
         user.setConfirmationToken(token);
@@ -110,9 +116,9 @@ public class StaffServiceImplementation implements StaffService {
     public ResponseEntity<ApiResponse> updateStaffInformation(StaffRelevantDetailsDto staffRelevantDetailsDto) {
 
         User user = appUtil.getLoggedInUser();
-        if (user.getRole().equals(Role.ROLE_STAFF) || user.getRole().equals(Role.ROLE_SUPER_ADMIN) || user.getRole().equals(Role.ROLE_RIDER))
+        if (user.getRole().equals(Role.STAFF) || user.getRole().equals(Role.SUPER_ADMIN) || user.getRole().equals(Role.ADMIN))
 
-            user.setState(staffRelevantDetailsDto.getStateOfOrigin());
+        user.setState(staffRelevantDetailsDto.getStateOfOrigin());
         user.setNextOfKinFirstName(staffRelevantDetailsDto.getNextOfKinFirstName());
         user.setNextOfKinLastName(staffRelevantDetailsDto.getNextOfKinLastName());
         user.setNextOfKinAddress(staffRelevantDetailsDto.getNextOfKinAddress());
@@ -133,6 +139,7 @@ public class StaffServiceImplementation implements StaffService {
             existingUser.get().setDob(completeRegistrationDto.getDob());
             existingUser.get().setAddress(completeRegistrationDto.getAddress());
             existingUser.get().setPhoneNumber(completeRegistrationDto.getPhoneNumber());
+            existingUser.get().setGender(completeRegistrationDto.getGender());
             existingUser.get().setActive(true);
             userRepository.save(existingUser.get());
             return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", "Your unique staff number is " + existingUser.get().getStaffId()));
@@ -155,35 +162,33 @@ public class StaffServiceImplementation implements StaffService {
         return ResponseEntity.status(400).body("Some error occurred");
     }
 
-    @Override
-    public ResponseEntity<ApiResponse> forgotPassword(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
+    @Override // tested and is working fine
+    public ResponseEntity<ApiResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+        Optional<User> user = userRepository.findByEmail(forgotPasswordDto.getEmail());
         if (user.isEmpty()) {
             throw new UserNotFoundException("User does not exist");
         }
-        String token = jwtUtils.resetPasswordToken(email);
+        String token = jwtUtils.resetPasswordToken(forgotPasswordDto.getEmail());
         User user1 = new User();
         user1.setConfirmationToken(token);
         userRepository.save(user1);
 
         String URL = "http://localhost:8080/api/v1/auth/reset-password/?token=" + token;
         String link = "<h3>Hello " + "<br> Click the link below to reset your password <a href=" + URL + "><br>Activate</a></h3>";
-        emailService.sendEmail(email, "AriXpress: Reset your password", link);
+        emailService.sendEmail(forgotPasswordDto.getEmail(), "AriXpress: Reset your password", link);
         return ResponseEntity.ok(new ApiResponse<>("Sent", "Check your email to reset your password", null));
     }
 
-
-    @Override
+    @Override // tested and is working fine
     public ResponseEntity<ApiResponse> resetPassword(ResetPasswordDto resetPasswordDto) {
         Optional<User> user = Optional.ofNullable(userRepository.findByConfirmationToken(resetPasswordDto.getConfirmationToken())
                 .orElseThrow(() -> new ValidationException("Token is incorrect or User does not exist!")));
 
-        if (!resetPasswordDto.getConfirmNewPassword().equals(passwordEncoder.encode(resetPasswordDto.getNewPassword()))) {
+        if (!(resetPasswordDto.getConfirmNewPassword().equals(resetPasswordDto.getNewPassword()))) {
             throw new InputMismatchException("Passwords do not match!");
         }
         user.get().setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));
         userRepository.save(user.get());
-
         return ResponseEntity.ok(new ApiResponse<>("Success", "Password reset successful.", null));
     }
 
@@ -203,7 +208,7 @@ public class StaffServiceImplementation implements StaffService {
     public ResponseEntity<ApiResponse> dispatchOrder(Long id, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException {
 
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_ADMIN)) || user.getRole().equals(Role.ROLE_STAFF)) {
+        if (!(user.getRole().equals(Role.ADMIN)) || user.getRole().equals(Role.STAFF)) {
             throw new ValidationException("You are not permitted to perform this operation");
         }
         Optional<Orders> order = Optional.ofNullable(orderRepository.findById(id)
@@ -211,6 +216,8 @@ public class StaffServiceImplementation implements StaffService {
 
         Optional<User> user1 = Optional.ofNullable(userRepository.findByStaffId(dispatchOrderDto.getRiderId())
                 .orElseThrow(() -> new UserNotFoundException("Rider does not exist! Check the rider Id")));
+        if(!(user1.get().getRiderStatus().equals(RiderStatus.Free)))
+            throw new RiderUnavailableException("This rider is currently engaged. Kindly assign another rider to this order.");
 
         order.get().setRiderPhoneNumber(user1.get().getPhoneNumber());
         order.get().setRiderName(user1.get().getFirstName() + " " + user1.get().getLastName());
@@ -218,6 +225,9 @@ public class StaffServiceImplementation implements StaffService {
         order.get().setOrderStatus(OrderStatus.INPROGRESS);
         order.get().setPrice(600.00);
         orderRepository.save(order.get());
+
+        user1.get().setRiderStatus(RiderStatus.Engaged);
+        userRepository.save(user1.get());
 
         DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy  hh:mm:ss");
         String currentDateTime = dateFormat.format(new Date());
@@ -239,7 +249,9 @@ public class StaffServiceImplementation implements StaffService {
 
         if (order.get().getPaymentType().equals(PaymentType.BankTransfer)) {
 
-            p2.add("Client name: " + order.get().getCustomerFirstName() + " " + order.get().getCustomerLastName() + '\n' +
+            p2.add( "Order Date: " + order.get().getCreatedAt() + '\n' +
+                    "ReferenceNumber: " + order.get().getReferenceNumber() + '\n' +
+                    "Client name: " + order.get().getCustomerFirstName() + " " + order.get().getCustomerLastName() + '\n' +
                     "Pick-up address: " + order.get().getPickUpAddress() + '\n' +
                     "Receiver name: " + order.get().getReceiverName() + '\n' +
                     "Receiver address: " + order.get().getDeliveryAddress() + '\n' +
@@ -254,14 +266,15 @@ public class StaffServiceImplementation implements StaffService {
                     "Account Number: " + "0044232307 " + '\n' +
                     "Bank Name: " + "GTB");
         } else {
-            p2.add("Client name: " + order.get().getCustomerFirstName() + " " + order.get().getCustomerLastName() + '\n' +
+            p2.add( "Order Date: " + order.get().getCreatedAt() + '\n' +
+                    "ReferenceNumber: " + order.get().getReferenceNumber() + '\n' +
+                    "Client name: " + order.get().getCustomerFirstName() + " " + order.get().getCustomerLastName() + '\n' +
                     "Pick-up address: " + order.get().getPickUpAddress() + '\n' +
                     "Receiver name: " + order.get().getReceiverName() + '\n' +
                     "Receiver address: " + order.get().getDeliveryAddress() + '\n' +
                     "Receiver phone number: " + order.get().getReceiverPhoneNumber() + '\n' +
                     "Item type: " + order.get().getItemType() + '\n' +
                     "Item quantity: " + order.get().getItemQuantity() + '\n' +
-                    "Date: " + order.get().getCreatedAt() + '\n' +
                     "Rider name: " + order.get().getRiderName() + '\n' +
                     "Rider Phone Number: " + order.get().getReceiverPhoneNumber() + '\n' +
                     "Current Date: " + currentDateTime);
@@ -280,85 +293,54 @@ public class StaffServiceImplementation implements StaffService {
     @Override // tested and is working fine
     public ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_STAFF))) {
+        if (!(user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.STAFF))) {
             throw new ValidationException("You are not authorised to perform this operation.");
         }
-        Optional<Bike> bike = bikeRepository.findByBikeNumber(registerBikeDto.getBikeNumber());
-        if (bike.isEmpty()) {
+          Optional<Bike> bike = bikeRepository.findByBikeNumber(registerBikeDto.getBikeNumber());
+            if(bike.isPresent())
+                throw new ResourceAlreadyExistsException("This bike is already registered!");
 
-            Bike bike1 = new Bike();
-            bike1.setBikeNumber(registerBikeDto.getBikeNumber());
-            bike1.setPrice(registerBikeDto.getPrice());
-            bike1.setMake(registerBikeDto.getMake());
-            bike1.setImages(registerBikeDto.getImages());
-            bikeRepository.save(bike1);
-            return ResponseEntity.ok(new ApiResponse<>("Success", "Bike registered", null));
-        } else throw new ResourceNotFoundException("There is no bike with this Id");
+        Bike bike1 = new Bike();
+        bike1.setBikeNumber(registerBikeDto.getBikeNumber());
+        bike1.setPrice(registerBikeDto.getPrice());
+        bike1.setMake(registerBikeDto.getMake());
+        bike1.setImages(registerBikeDto.getImages());
+        bikeRepository.save(bike1);
+        return ResponseEntity.ok(new ApiResponse<>("Success", "Bike registered", null));
     }
 
     @Override  //tested and is working fine
-    public ApiResponse registerARider(RegisterRiderDto registerRiderDto) {
+    public ResponseEntity<ApiResponse> registerARider(RegisterRiderDto registerRiderDto) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_ADMIN)) || user.getRole().equals(Role.ROLE_STAFF)) {
+        if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))) {
             throw new ValidationException("You are not authorised to perform this operation.");
         }
-
         Long staffNumber = appUtil.generateRandomCode();
         User user1 = new User();
-        user1.setRole(Role.ROLE_RIDER);
+        user1.setRole(Role.RIDER);
         user1.setFirstName(registerRiderDto.getFirstName());
         user1.setLastName(registerRiderDto.getLastName());
         user1.setAddress(registerRiderDto.getAddress());
         user1.setStaffId(staffNumber);
         user1.setPhoneNumber(registerRiderDto.getPhoneNumber());
+        user1.setRiderStatus(RiderStatus.Free);
         user1.setActive(true);
-        user1.setPassword(passwordEncoder.encode(registerRiderDto.getPassword()));
         userRepository.save(user1);
 
-        return new ApiResponse<>("Success", "Rider registration successful", "Your Rider ID is: " + "RD-" + staffNumber);
+        return ResponseEntity.ok(new ApiResponse<>("Success", "Rider registration successful", "Your Rider ID is: " + staffNumber));
     }
 
     @Override //tested and is working fine
-    public ApiResponse changeRoleToStaff(MakeStaffDto makeStaffDto) {
+    public ApiResponse assignBikeToRider(AssignRiderToBikeDto assignRiderToBikeDto) {
+
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_ADMIN))) {
+        if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
-
-        Optional<User> user1 = userRepository.findByEmail(makeStaffDto.getEmail());
-        if (user1.isEmpty())
-            throw new UserNotFoundException("There is no user with this email!");
-
-        if (user1.get().getRole().equals(Role.ROLE_STAFF))
-            throw new UnsupportedOperationException("This user is already a staff!");
-
-        if (user1.get().getRole().equals(Role.ROLE_SUPER_ADMIN))
-            throw new UnsupportedOperationException("This user is a Super Admin!");
-
-        Long staffNumber = appUtil.generateRandomCode();
-
-        if (user1.get().getRole().equals(Role.ROLE_CUSTOMER))
-            user1.get().setRole(Role.ROLE_STAFF);
-        user1.get().setStaffId(staffNumber);
-        user1.get().setCustomerType(null);
-        user1.get().setClientCode(null);
-        userRepository.save(user1.get());
-
-        userRepository.save(user1.get());
-        return new ApiResponse<>("Success", "New admin created", "Your staff number is: " + staffNumber);
-    }
-
-    @Override //tested and is working fine
-    public ApiResponse assignRiderToBike(AssignRiderToBikeDto assignRiderToBikeDto) {
-
-        User user = appUtil.getLoggedInUser();
-        if (!user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_STAFF)) {
-            throw new UnsupportedOperationException("You are not authorised to perform this operation");
-        }
-        User user1 = userRepository.findByEmailOrStaffId(assignRiderToBikeDto.getEmail(), assignRiderToBikeDto.getStaffId())
+        User user1 = userRepository.findByStaffId(assignRiderToBikeDto.getStaffId())
                 .orElseThrow(() -> new UserNotFoundException("This user does not exist"));
 
-        if (!user1.getRole().equals(Role.ROLE_RIDER))
+        if (!user1.getRole().equals(Role.RIDER))
             throw new UnsupportedOperationException("You cannot perform this operation on this user");
 
         Optional<Bike> bike = bikeRepository.findByBikeNumber(assignRiderToBikeDto.getBikeNumber());
@@ -376,8 +358,8 @@ public class StaffServiceImplementation implements StaffService {
     @Override //tested and is working fine
     public Optional<Orders> viewAnOrderById(Long id) {
         User user = appUtil.getLoggedInUser();
-        if (!user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_RIDER))
-            throw new UnsupportedOperationException("You are not authorised to perform this operation.");
+        if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
+            throw new ValidationException("You are not authorised to perform this operation.");
 
         Optional<Orders> order = Optional.ofNullable(orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("There is no order with such Id")));
@@ -387,16 +369,26 @@ public class StaffServiceImplementation implements StaffService {
     @Override //tested and is working fine
     public List<Orders> viewAllOrdersByStatus(OrderStatus orderStatus) {
         User user = appUtil.getLoggedInUser();
-        if (!user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_STAFF))
-            throw new UnsupportedOperationException("You are not authorised to perform this operation.");
-
+        if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
+            throw new ValidationException("You are not authorised to perform this operation.");
         return new ArrayList<>(orderRepository.findByOrderStatus(orderStatus));
+    }
+
+    @Override
+    public List<User> viewAllRidersByStatus(RiderStatus riderStatus) {
+        User user = appUtil.getLoggedInUser();
+        if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
+            throw new ValidationException("You are not allowed to perform this operation");
+
+        List<User> ridersList = new ArrayList<>();
+        ridersList.add(userRepository.findByRiderStatus(riderStatus));
+        return ridersList;
     }
 
     @Override //tested and is working fine
     public Integer countRidesPerRider(Long staffId) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_RIDER) || user.getRole().equals(Role.ROLE_SUPER_ADMIN))) {
+        if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.RIDER) || (user.getRole().equals(Role.SUPER_ADMIN))))) {
             throw new ValidationException("You are not authorised to perform this operation.");
         }
         List<Orders> tripCount = new ArrayList<>(orderRepository.findByRiderId(staffId));
@@ -407,7 +399,7 @@ public class StaffServiceImplementation implements StaffService {
     public Optional<User> viewStaffDetails(Long staffId) {
         User user = appUtil.getLoggedInUser();
 
-        if (!(user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_SUPER_ADMIN)))
+        if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.SUPER_ADMIN))))
             throw new ValidationException("You are not authorised to perform this operation!");
 
         Optional<User> user1 = userRepository.findByStaffId(staffId);
@@ -421,7 +413,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override  //Tested and is working fine
     public ResponseEntity<ApiResponse> deleteStaff(Long staffId) {
         User user = appUtil.getLoggedInUser();
-        if (user.getRole().equals(Role.ROLE_SUPER_ADMIN))
+        if (user.getRole().equals(Role.SUPER_ADMIN))
             throw new ValidationException("You are not authorised to perform this operation!");
 
         Optional<User> user1 = userRepository.findByStaffId(staffId);
@@ -435,7 +427,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override //Tested and is working fine
     public ResponseEntity<ApiResponse> createAdmin(Long staffId) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_SUPER_ADMIN))) {
+        if (!(user.getRole().equals(Role.SUPER_ADMIN))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
 
@@ -443,14 +435,14 @@ public class StaffServiceImplementation implements StaffService {
         if (user1.isEmpty())
             throw new UserNotFoundException("There is no staff with this Id!");
 
-        if (user1.get().getRole().equals(Role.ROLE_ADMIN))
+        if (user1.get().getRole().equals(Role.ADMIN))
             throw new UnsupportedOperationException("This user is already an Admin!");
 
-        if (user1.get().getRole().equals(Role.ROLE_SUPER_ADMIN))
+        if (user1.get().getRole().equals(Role.SUPER_ADMIN))
             throw new UnsupportedOperationException("This user is a Super Admin!");
 
-        if (user1.get().getRole().equals(Role.ROLE_STAFF))
-            user1.get().setRole(Role.ROLE_ADMIN);
+        if (user1.get().getRole().equals(Role.STAFF))
+            user1.get().setRole(Role.ADMIN);
         userRepository.save(user1.get());
 
         userRepository.save(user1.get());
@@ -460,7 +452,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override //Tested and is working fine
     public List<Orders> viewAllOrders() {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_SUPER_ADMIN) || user.getRole().equals(Role.ROLE_ADMIN))) {
+        if (!(user.getRole().equals(Role.SUPER_ADMIN) || (user.getRole().equals(Role.ADMIN)))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
         List<Orders> allOrders = new ArrayList<>(orderRepository.findAll());
@@ -470,7 +462,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override
     public List<Orders> clientWeeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_ADMIN) || user.getRole().equals(Role.ROLE_STAFF)))
+        if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF))))
             throw new ValidationException("You are not authorised to perform this operation");
 
         return new ArrayList<>(orderRepository.findAllByClientCodeAndCreatedAtBetween(weeklyOrderSummaryDto.getClientCode(), weeklyOrderSummaryDto.getStartDate(), weeklyOrderSummaryDto.getEndDate()));
@@ -479,7 +471,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override
     public List<Orders> viewAllOrdersToday(LocalDate localDate) {
     User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_SUPER_ADMIN) || user.getRole().equals(Role.ROLE_ADMIN))) {
+        if (!(user.getRole().equals(Role.SUPER_ADMIN) || (user.getRole().equals(Role.ADMIN)))) {
             throw new ValidationException("You are not authorised to perform this operation");
     }
        LocalDate today = LocalDate.now();
@@ -489,7 +481,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override
     public List<Orders> viewAllOrdersInAMonth(OrdersHistoryDto ordersHistoryDto) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_SUPER_ADMIN) || user.getRole().equals(Role.ROLE_ADMIN))) {
+        if (!(user.getRole().equals(Role.SUPER_ADMIN) || user.getRole().equals(Role.ADMIN))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
         return orderRepository.findAllByCreatedAtBetween(ordersHistoryDto.getStartDate(), ordersHistoryDto.getEndDate());
@@ -498,7 +490,7 @@ public class StaffServiceImplementation implements StaffService {
     @Override
     public List<Orders> viewAllOrdersInAWeek(OrdersHistoryDto ordersHistoryDto) {
         User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ROLE_SUPER_ADMIN) || user.getRole().equals(Role.ROLE_ADMIN))) {
+        if (!(user.getRole().equals(Role.SUPER_ADMIN) || user.getRole().equals(Role.ADMIN))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
         return orderRepository.findAllByCreatedAtBetween(ordersHistoryDto.getStartDate(), ordersHistoryDto.getEndDate());

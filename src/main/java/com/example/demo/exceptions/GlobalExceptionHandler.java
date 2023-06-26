@@ -63,4 +63,32 @@ public class GlobalExceptionHandler {
         return new ApiResponse<>("Failed", "Error: " + ex.getMessage(), null);
 
     }
+
+    @ExceptionHandler(RiderUnavailableException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    @ResponseBody
+    public ApiResponse<String> handleRiderUnavailableException(RiderUnavailableException ex) {
+        logger.error(ex.getMessage());
+        return new ApiResponse<>("Failed", "Error: " + ex.getMessage(), null);
+
+    }
+
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    @ResponseBody
+    public ApiResponse<String> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex) {
+        logger.error(ex.getMessage());
+        return new ApiResponse<>("Failed", "Error: " + ex.getMessage(), null);
+
+    }
+
+    @ExceptionHandler(UnsupportedOperationException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    @ResponseBody
+    public ApiResponse<String> handleUnsupportedOperationException(UnsupportedOperationException ex) {
+        logger.error(ex.getMessage());
+        return new ApiResponse<>("Failed", "Error: " + ex.getMessage(), null);
+
+    }
+
 }

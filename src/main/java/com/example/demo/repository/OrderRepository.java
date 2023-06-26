@@ -15,17 +15,13 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Orders, Long> {
 
-    Optional<Orders> findById(Long id);
-    Optional<Orders> findByClientCodeAndId (Long clientCode, Long id);
+    Optional<Orders> findByReferenceNumber(String referenceNumber);
+    Optional<Orders> findByClientCodeAndReferenceNumber (Long clientCode, String referenceNumber);
     List<Orders> findByOrderStatus(OrderStatus orderStatus);
     List<Orders> findByRiderId (Long staffId);
     List<Orders> findAllByClientCodeAndCreatedAtBetween(Long clientCode, LocalDate startDate, LocalDate stopDate);
-//    List<Orders> findAllByCreatedAtBetween(LocalDateTime startTime, LocalDateTime stopTime);
-
     List<Orders> findAllByCreatedAt (LocalDate localDate);
     List<Orders> findAllByCreatedAtBetween (LocalDate startDate, LocalDate stopDate);
     List<Orders> findByClientCode (Long clientCode);
-
-
 
 }

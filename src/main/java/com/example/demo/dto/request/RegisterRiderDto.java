@@ -1,6 +1,7 @@
 package com.example.demo.dto.request;
 
 import lombok.Data;
+
 @Data
 public class RegisterRiderDto {
 
@@ -8,5 +9,4 @@ public class RegisterRiderDto {
     private String lastName;
     private String phoneNumber;
     private String address;
-    private String password;
 }

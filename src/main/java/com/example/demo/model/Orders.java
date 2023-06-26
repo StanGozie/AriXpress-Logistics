@@ -22,7 +22,7 @@ import javax.persistence.Enumerated;
 public class Orders extends Base{
 
 
-    private String orderId;
+    private String referenceNumber;
     private String customerFirstName;
     private String customerLastName;
     private String email;

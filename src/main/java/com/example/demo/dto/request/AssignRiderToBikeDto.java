@@ -9,7 +9,6 @@ public class AssignRiderToBikeDto {
 
     @NotBlank
     private String bikeNumber;
-    private String email;
     private Long staffId;
 
 }

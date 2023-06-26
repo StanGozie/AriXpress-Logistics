@@ -41,11 +41,11 @@ public interface CustomerService {
 
     ResponseEntity<ApiResponse> thirdPartySender(ThirdPartySenderDto thirdPartySenderDto);
 
-    ResponseEntity<ApiResponse> cancelABooking(Long id, CancelABookingDto cancelABookingDto);
+    ResponseEntity<ApiResponse> cancelABooking(String referenceNumber, CancelABookingDto cancelABookingDto);
 
-    ResponseEntity<ApiResponse> updateOrderStatus(Long id,  OrderStatus orderStatus);
+    ResponseEntity<ApiResponse> confirmDelivery(String referenceNumber);
 
-    ResponseEntity<ApiResponse> giveFeedback(Long id, GiveFeedbackDto giveFeedbackDto);
+    ResponseEntity<ApiResponse> giveFeedback(String referenceNumber, GiveFeedbackDto giveFeedbackDto);
     List<Orders> weeklyOrderSummary (WeeklyOrderSummaryDto weeklyOrderSummaryDto);
 
     ResponseEntity<ApiResponse> viewRiderLocation (ViewRiderLocationDto viewRiderLocationDto);

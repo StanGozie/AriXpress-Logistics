@@ -10,7 +10,6 @@ import com.example.demo.dto.request.LoginDto;
 import com.example.demo.dto.request.ResetPasswordDto;
 import com.example.demo.dto.request.SignUpDto;
 import com.example.demo.dto.request.ThirdPartySenderDto;
-import com.example.demo.dto.request.UpdateOrderStatusDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
@@ -83,24 +82,24 @@ public class CustomerController {
         return customerService.thirdPartySender(thirdPartySenderDto);
     }
 
-    @PatchMapping("/cancel-order/{id}")
-    public ResponseEntity<ApiResponse> cancelABooking(@PathVariable Long id, @Valid @RequestBody CancelABookingDto cancelABookingDto) {
-        return customerService.cancelABooking(id, cancelABookingDto);
+    @PatchMapping("/cancel-order/{referenceNumber}")
+    public ResponseEntity<ApiResponse> cancelABooking(@PathVariable String referenceNumber, @Valid @RequestBody CancelABookingDto cancelABookingDto) {
+        return customerService.cancelABooking(referenceNumber, cancelABookingDto);
     }
 
     @GetMapping("/weekly-summary")
-    public List<Orders> weeklyOrderSummary(@RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
+    public List<Orders> weeklyOrderSummary(@Valid @RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
         return customerService.weeklyOrderSummary(weeklyOrderSummaryDto);
     }
 
-    @PatchMapping("/update-order-status/{id}")
-    public ResponseEntity<ApiResponse> updateOrderStatus(@PathVariable Long id, @RequestBody OrderStatus orderStatus) {
-        return customerService.updateOrderStatus(id, orderStatus);
+    @PatchMapping("/update-order-status/{referenceNumber}")
+    public ResponseEntity<ApiResponse> confirmOrderReceipt(@PathVariable String referenceNumber) {
+        return customerService.confirmDelivery(referenceNumber);
     }
 
-    @PatchMapping("/feedback/{id}")
-    public ResponseEntity<ApiResponse> giveFeedback(@PathVariable Long id, @Valid @RequestBody GiveFeedbackDto giveFeedbackDto) {
-        return customerService.giveFeedback(id, giveFeedbackDto);
+    @PatchMapping("/feedback/{referenceNumber}")
+    public ResponseEntity<ApiResponse> giveFeedback(@PathVariable String referenceNumber, @Valid @RequestBody GiveFeedbackDto giveFeedbackDto) {
+        return customerService.giveFeedback(referenceNumber, giveFeedbackDto);
     }
 
 
