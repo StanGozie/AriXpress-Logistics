@@ -4,10 +4,8 @@ import lombok.Data;
 
 import java.time.LocalDate;
 @Data
-public class WeeklyOrderSummaryDto {
+public class YearOrderSummaryDto {
 
-    private Long clientCode;
     private LocalDate startDate;
     private LocalDate endDate;
-
 }

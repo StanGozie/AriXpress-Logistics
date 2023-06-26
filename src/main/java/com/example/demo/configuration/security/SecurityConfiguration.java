@@ -26,11 +26,8 @@ public class SecurityConfiguration {
     private final String path = "/api/v1/auth";
     private final String path2 = "/api/v1/auth/client";
     private final String[] AUTH_WHITELIST = {
-//            path +"/login/**", path + "/forgot-password", path + "/change-password",
-//            path + "/register", path + "/verify-code", path + "/references",
             "/v3/api-docs/**",  "/configuration/**",   "/swagger*/**",
             "/swagger-ui/**",  "/webjars/**", "/api/v1/wallet/validate-account",
-
             path + "/register", path + "/verify-code", path + "/references",
             path + "/forgot-password/**",
             path + "/reset-password/**",
@@ -47,6 +44,7 @@ public class SecurityConfiguration {
             path2 + "/forgot-password",
             path2 + "/reset-password/**",
             path2 + "/complete-registration",
+            path2 + "/corporate/complete-business-registration"
     };
 
     private final JwtAuthFilter jwtAuthFilter;

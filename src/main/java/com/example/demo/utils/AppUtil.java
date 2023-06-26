@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -114,7 +115,6 @@ public class AppUtil {
         }
     }
 
-
     public  Object getObjectFromString(String content, Class cls){
 
         try {
@@ -144,6 +144,6 @@ public class AppUtil {
         String reference = uuid.toString().replaceAll("-", "").toUpperCase();
 
         // Return the first 10 characters
-        return reference.substring(0, 10);
+        return reference.substring(0, 7);
     }
 }

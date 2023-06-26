@@ -9,5 +9,4 @@ public class RegisterBikeDto {
     private String make;
     private double price;
     private String images;
-    private String riderName;
 }

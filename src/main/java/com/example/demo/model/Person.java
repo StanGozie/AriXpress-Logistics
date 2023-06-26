@@ -18,7 +18,9 @@ public abstract class Person extends Base{
     private String firstName;
     private String lastName;
     private String companyName;
+    @Enumerated(EnumType.STRING)
     private PaymentInterval paymentInterval;
+    @Enumerated(EnumType.STRING)
     private PaymentType paymentType;
     private String email;
     private String password;

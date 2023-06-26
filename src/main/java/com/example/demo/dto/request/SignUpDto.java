@@ -21,10 +21,10 @@ public class SignUpDto {
     @Email(message = "Email must be valid")
     private String email;
 
-    @NotBlank(message = "password cannot be blank")
+    @NotBlank(message = "Password cannot be blank")
     private String password;
 
-    @NotBlank(message = "confirm password cannot be blank")
+    @NotBlank(message = "Confirm password cannot be blank")
     private String confirmPassword;
 
     private Boolean registerAsACompany;

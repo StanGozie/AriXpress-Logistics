@@ -13,6 +13,7 @@ import com.example.demo.dto.request.ThirdPartySenderDto;
 import com.example.demo.dto.request.UpdateOrderStatusDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.enums.OrderStatus;
 import com.example.demo.exceptions.ValidationException;
 import com.example.demo.model.Orders;
 import com.example.demo.service.CustomerService;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +29,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -82,24 +83,24 @@ public class CustomerController {
         return customerService.thirdPartySender(thirdPartySenderDto);
     }
 
-    @PatchMapping("/cancel-order")
-    public ResponseEntity<ApiResponse> cancelABooking(@Valid @RequestBody CancelABookingDto cancelABookingDto) {
-        return customerService.cancelABooking(cancelABookingDto);
+    @PatchMapping("/cancel-order/{id}")
+    public ResponseEntity<ApiResponse> cancelABooking(@PathVariable Long id, @Valid @RequestBody CancelABookingDto cancelABookingDto) {
+        return customerService.cancelABooking(id, cancelABookingDto);
     }
 
     @GetMapping("/weekly-summary")
-    public List<Optional<Orders>> weeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
+    public List<Orders> weeklyOrderSummary(@RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
         return customerService.weeklyOrderSummary(weeklyOrderSummaryDto);
     }
 
-        @PatchMapping("/update-order-status")
-    public ResponseEntity<ApiResponse> updateOrderStatus(UpdateOrderStatusDto updateOrderStatusDto) {
-        return customerService.updateOrderStatus(updateOrderStatusDto);
+    @PatchMapping("/update-order-status/{id}")
+    public ResponseEntity<ApiResponse> updateOrderStatus(@PathVariable Long id, @RequestBody OrderStatus orderStatus) {
+        return customerService.updateOrderStatus(id, orderStatus);
     }
 
-    @PatchMapping("/feedback")
-    public ResponseEntity<ApiResponse> giveFeedback(GiveFeedbackDto giveFeedbackDto) {
-        return customerService.giveFeedback(giveFeedbackDto);
+    @PatchMapping("/feedback/{id}")
+    public ResponseEntity<ApiResponse> giveFeedback(@PathVariable Long id, @Valid @RequestBody GiveFeedbackDto giveFeedbackDto) {
+        return customerService.giveFeedback(id, giveFeedbackDto);
     }
 
 

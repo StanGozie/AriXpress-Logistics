@@ -9,16 +9,7 @@ public class AssignRiderToBikeDto {
 
     @NotBlank
     private String bikeNumber;
-
-    @NotBlank
     private String email;
+    private Long staffId;
 
-    @NotBlank
-    private String riderName;
-
-    @NotBlank
-    private String riderPhoneNumber;
-
-    @NotBlank
-    private String riderAddress;
 }

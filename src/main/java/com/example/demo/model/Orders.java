@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -20,6 +21,8 @@ import javax.persistence.Enumerated;
 @NoArgsConstructor
 public class Orders extends Base{
 
+
+    private String orderId;
     private String customerFirstName;
     private String customerLastName;
     private String email;
@@ -54,16 +57,3 @@ public class Orders extends Base{
     private String feedback;
 
 }
-
-//                "phoneNumber": "08032363434",
-//                "address": "Prince Ifeanyi Obodoakor Building, Ifite-Awka, Awka",
-//                "dob": 29 7, 1992,
-//                "state": "Anambra",
-//                "gender": "Male"
-//
-//
-//                "firstName": "Chigozie",
-//                "lastName": "Enyoghasi",
-//                "email": "chigozieenyoghasi@yahoo.com",
-//                "password": "12345",
-//                "confirmPassword": "12345"

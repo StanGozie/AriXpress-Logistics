@@ -7,6 +7,7 @@ import com.example.demo.dto.request.*;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.CustomerType;
 import com.example.demo.enums.OrderStatus;
+import com.example.demo.enums.PaymentType;
 import com.example.demo.enums.Role;
 import com.example.demo.exceptions.AccountAlreadyActivatedException;
 import com.example.demo.exceptions.ResourceNotFoundException;
@@ -112,10 +113,10 @@ public class CustomerServiceImplementation implements CustomerService {
             existingUser.get().setPhoneNumber(completeRegistrationDto.getPhoneNumber());
             existingUser.get().setState(completeRegistrationDto.getState());
             existingUser.get().setGender(completeRegistrationDto.getGender());
-            existingUser.get().setClientCode(Long.valueOf("IC-"+clientCode)); //IC stands for Individual Customer
+            existingUser.get().setClientCode(clientCode);
             existingUser.get().setActive(true);
             userRepository.save(existingUser.get());
-            return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", null));
+            return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", "Your client number is "+clientCode));
         }
         return ResponseEntity.ok(new ApiResponse<>("Failed", "This user does not exist. Kindly sign up.", null));
     }
@@ -134,7 +135,7 @@ public class CustomerServiceImplementation implements CustomerService {
         existingUser.get().setAddress(completeBusinessRegistrationDto.getAddress());
         existingUser.get().setPaymentType(completeBusinessRegistrationDto.getPaymentType());
         existingUser.get().setPaymentInterval(completeBusinessRegistrationDto.getPaymentInterval());
-        existingUser.get().setClientCode(Long.valueOf("CE-"+clientCode)); //CE stands for Corporate Entity
+        existingUser.get().setClientCode(clientCode); //CE stands for Corporate Entity
         userRepository.save(existingUser.get());
         }
         return ApiResponse.builder()
@@ -209,9 +210,11 @@ public class CustomerServiceImplementation implements CustomerService {
     public ResponseEntity<ApiResponse> bookADelivery(DirectDeliveryDto directDeliveryDto) {
         User user = appUtil.getLoggedInUser();
         String email = user.getEmail();
+        String id = appUtil.generateSerialNumber("AXL-");
 
         if(user.getCustomerType().equals(CustomerType.Corporate)) {
             Orders orders = new Orders();
+            orders.setOrderId(id);
             orders.setClientCode(user.getClientCode());
             orders.setCompanyName(user.getCompanyName());
             orders.setPickUpAddress(user.getAddress());
@@ -221,6 +224,7 @@ public class CustomerServiceImplementation implements CustomerService {
             orders.setItemType(directDeliveryDto.getItemType());
             orders.setItemQuantity(directDeliveryDto.getItemQuantity());
             orders.setOrderStatus(OrderStatus.PENDING);
+            orders.setEmail(email);
         }
         Orders orders = new Orders();
         orders.setClientCode(user.getId());
@@ -235,6 +239,7 @@ public class CustomerServiceImplementation implements CustomerService {
         orders.setItemType(directDeliveryDto.getItemType());
         orders.setPaymentType(directDeliveryDto.getPaymentType());
         orders.setOrderStatus(OrderStatus.PENDING);
+        orders.setEmail(email);
         orderRepository.save(orders);
 
         String URL = "http://localhost:8080/api/v1/auth/new-order/?order=" + orders.getId();
@@ -266,6 +271,8 @@ public class CustomerServiceImplementation implements CustomerService {
         order.setReceiverName(thirdPartySenderDto.getReceiverName());
         order.setReceiverPhoneNumber(thirdPartySenderDto.getReceiverPhoneNumber());
         order.setDeliveryAddress(thirdPartySenderDto.getDeliveryAddress());
+        order.setPaymentType(thirdPartySenderDto.getPaymentType());
+        order.setEmail(email);
         order.setPrice(6000.00);
         order.setDistance(23.4);
         orderRepository.save(order);
@@ -278,11 +285,18 @@ public class CustomerServiceImplementation implements CustomerService {
 
     }
     @Override
-    public ResponseEntity<ApiResponse> cancelABooking(CancelABookingDto cancelABookingDto) {
+    public ResponseEntity<ApiResponse> cancelABooking(Long id, CancelABookingDto cancelABookingDto) {
         User user = appUtil.getLoggedInUser();
-        String email = user.getEmail();
-        Optional<Orders> order = Optional.ofNullable(orderRepository.findByEmailAndId(email, cancelABookingDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("There is no order with the Id " + cancelABookingDto.getId())));
+        Long clientCode = user.getClientCode();
+        Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndId(clientCode, id)
+                .orElseThrow(() -> new ResourceNotFoundException("There is no order with the Id " + id)));
+
+        if(order.get().getOrderStatus().equals(OrderStatus.INPROGRESS)){
+            return ResponseEntity.ok(new ApiResponse("Forbidden", "A rider has been dispatched to the address already.", null));
+        }
+        if(order.get().getOrderStatus().equals(OrderStatus.COMPLETED)){
+            return ResponseEntity.ok(new ApiResponse<>("Failed", "Unsupported Operation", null));
+        }
 
         order.get().setOrderStatus(OrderStatus.CANCELLED);
         order.get().setReasonForOrderCancellation(cancelABookingDto.getReasonForOrderCancellation());
@@ -292,54 +306,38 @@ public class CustomerServiceImplementation implements CustomerService {
         String link = "<h3>Hello " +"<br> This order has been cancelled.<a href=" + URL + "><br>Activate</a></h3>" + '\n'+
                 "Reason for cancellation:  " + order.get().getReasonForOrderCancellation();
         emailService.sendEmail("chigozieenyoghasi@yahoo.com","AriXpress: Cancelled Order", link);
-
-        return null;
+        return ResponseEntity.ok(new ApiResponse("Success", "Order has been cancelled", null));
     }
 
     @Override
-    public ResponseEntity<ApiResponse> updateOrderStatus(UpdateOrderStatusDto updateOrderStatusDto) {
+    public ResponseEntity<ApiResponse> updateOrderStatus(Long id,  OrderStatus orderStatus) {
         User user = appUtil.getLoggedInUser();
-        String email = user.getEmail();
-        Optional<Orders> order = Optional.ofNullable(orderRepository.findByEmailAndId(email, updateOrderStatusDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Order with Id " + updateOrderStatusDto.getId() + " was not found")));
-        order.get().setOrderStatus(updateOrderStatusDto.getStatus());
+        Long clientCode = user.getClientCode();
+        Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndId(clientCode, id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order with Id " + id + " was not found")));
+        order.get().setOrderStatus(orderStatus);
         orderRepository.save(order.get());
 
         return ResponseEntity.ok(new ApiResponse<>("Success", "Order status updated", null));
     }
-
     @Override
-    public ResponseEntity<ApiResponse> giveFeedback(GiveFeedbackDto giveFeedbackDto) {
+    public ResponseEntity<ApiResponse> giveFeedback(Long id, GiveFeedbackDto giveFeedbackDto) {
         User user = appUtil.getLoggedInUser();
-        String email = user.getEmail();
-        Optional<Orders> order = Optional.ofNullable(orderRepository.findByEmailAndId(email, giveFeedbackDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Order with Id " + giveFeedbackDto.getId() + " was not found")));
+        Long clientCode = user.getClientCode();
+        Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndId(clientCode, id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order with Id " + id + " was not found")));
         order.get().setFeedback(giveFeedbackDto.getFeedback());
         orderRepository.save(order.get());
         return ResponseEntity.ok(new ApiResponse<>("Success", "Feedback Received. Thank you.", null));
     }
 
     @Override
-    public List<Optional<Orders>> weeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
+    public List<Orders> weeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
         User user = appUtil.getLoggedInUser();
-        Long id = user.getClientCode();
-        if(!(user.getRole().equals(Role.ROLE_CUSTOMER) && user.getCustomerType().equals(CustomerType.Corporate)))
-            throw new javax.validation.ValidationException("You are not authorised to perform this action");
-
-        List<Optional<Orders>> ordersList = new ArrayList<>();
-
-        Optional<Orders> orders1 = orderRepository.findByClientCode(id);
-        if(orders1.isPresent()){
-            if(orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getStartDate())||
-               orders1.get().getCreatedAt().isAfter(weeklyOrderSummaryDto.getStartDate()) ||
-               orders1.get().getCreatedAt().isBefore(weeklyOrderSummaryDto.getEndDate()) ||
-               orders1.get().getCreatedAt().isEqual(weeklyOrderSummaryDto.getEndDate()))
-               ordersList.add(orders1);
-        }
-        else {
-            throw new Exception("Some error occurred");
-        }
-        return ordersList;
+//        Long clientCode1 = user.getClientCode();
+        if(!(user.getRole().equals(Role.ROLE_CUSTOMER)))
+            throw new ValidationException("You are not authorised to perform this action");
+        return new ArrayList<>(orderRepository.findAllByClientCodeAndCreatedAtBetween(weeklyOrderSummaryDto.getClientCode(), weeklyOrderSummaryDto.getStartDate(), weeklyOrderSummaryDto.getEndDate()));
     }
 
     @Override

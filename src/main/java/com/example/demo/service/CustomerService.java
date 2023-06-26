@@ -14,6 +14,7 @@ import com.example.demo.dto.request.UpdateOrderStatusDto;
 import com.example.demo.dto.request.ViewRiderLocationDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.enums.OrderStatus;
 import com.example.demo.model.Orders;
 import org.springframework.http.ResponseEntity;
 
@@ -40,12 +41,12 @@ public interface CustomerService {
 
     ResponseEntity<ApiResponse> thirdPartySender(ThirdPartySenderDto thirdPartySenderDto);
 
-    ResponseEntity<ApiResponse> cancelABooking(CancelABookingDto cancelABookingDto);
+    ResponseEntity<ApiResponse> cancelABooking(Long id, CancelABookingDto cancelABookingDto);
 
-    ResponseEntity<ApiResponse> updateOrderStatus(UpdateOrderStatusDto updateOrderStatusDto);
+    ResponseEntity<ApiResponse> updateOrderStatus(Long id,  OrderStatus orderStatus);
 
-    ResponseEntity<ApiResponse> giveFeedback(GiveFeedbackDto giveFeedbackDto);
-    List<Optional<Orders>> weeklyOrderSummary (WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception;
+    ResponseEntity<ApiResponse> giveFeedback(Long id, GiveFeedbackDto giveFeedbackDto);
+    List<Orders> weeklyOrderSummary (WeeklyOrderSummaryDto weeklyOrderSummaryDto);
 
     ResponseEntity<ApiResponse> viewRiderLocation (ViewRiderLocationDto viewRiderLocationDto);
 

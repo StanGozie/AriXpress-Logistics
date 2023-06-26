@@ -30,7 +30,9 @@ public class User extends Person{
     private String stateOfOrigin;
     @Enumerated(EnumType.STRING)
     private Role role;
+    @Enumerated(EnumType.STRING)
     private CustomerType customerType;
     private Long clientCode;
     private String dob;
+
 }

@@ -5,12 +5,12 @@ import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.model.Orders;
 import com.example.demo.model.User;
-import com.lowagie.text.Document;
 import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,13 +30,13 @@ public interface StaffService {
 
     ResponseEntity<ApiResponse> changePassword (ChangePasswordDto changePasswordDto);
 
-    ResponseEntity<Document>  dispatchOrder(Long orderId, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
+    ResponseEntity<ApiResponse> dispatchOrder(Long id, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
 
     ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto);
 
     public ApiResponse registerARider(RegisterRiderDto registerRiderDto);
 
-    ApiResponse changeRoleToStaff (String email);
+    ApiResponse changeRoleToStaff (MakeStaffDto makeStaffDto);
 
     ApiResponse assignRiderToBike(AssignRiderToBikeDto assignRiderToBikeDto);
 
@@ -53,14 +53,15 @@ public interface StaffService {
     ResponseEntity<ApiResponse> createAdmin(Long staffId);
 
     List<Orders> viewAllOrders();
-    List<Optional<Orders>> clientWeeklyOrderSummary (Long clientCode, WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception;
+    List<Orders> clientWeeklyOrderSummary (WeeklyOrderSummaryDto weeklyOrderSummaryDto);
 
-    ResponseEntity<ApiResponse> viewAllOrdersToday (Date date);
+    List<Orders> viewAllOrdersToday (LocalDate localDate);
 
-    ResponseEntity<ApiResponse> viewAllOrdersByMonth (String month);
+    List<Orders> viewAllOrdersInAMonth (OrdersHistoryDto ordersHistoryDto);
 
-    ResponseEntity<ApiResponse> viewAllOrdersByWeek();
+    public List<Orders> viewAllOrdersInAWeek(OrdersHistoryDto ordersHistoryDto);
 
-}
+
+    }
 
 
