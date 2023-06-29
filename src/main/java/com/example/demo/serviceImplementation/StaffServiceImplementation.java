@@ -398,12 +398,12 @@ public class StaffServiceImplementation implements StaffService {
     }
 
     @Override //tested and is working fine
-    public Optional<Orders> viewAnOrderById(Long id) {
+    public Optional<Orders> viewAnOrderByReferenceNumber(String referenceNumber) {
         User user = appUtil.getLoggedInUser();
         if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
             throw new ValidationException("You are not authorised to perform this operation.");
 
-        Optional<Orders> order = Optional.ofNullable(orderRepository.findById(id)
+        Optional<Orders> order = Optional.ofNullable(orderRepository.findByReferenceNumber(referenceNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("There is no order with such Id")));
         return order;
     }

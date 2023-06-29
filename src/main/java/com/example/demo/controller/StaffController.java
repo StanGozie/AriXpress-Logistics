@@ -33,8 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -100,9 +98,9 @@ public class StaffController {
         return staffService.viewAllRidersByStatus(riderStatus);
     }
 
-        @GetMapping("/view-order-by-id/{orderId}")
-    public Optional<Orders> viewAnOrderById(@PathVariable Long orderId) {
-        return staffService.viewAnOrderById(orderId);
+        @GetMapping("/view-an-order/{referenceNumber}")
+        Optional<Orders> viewAnOrderByReferenceNumber (@PathVariable String referenceNumber){
+        return staffService.viewAnOrderByReferenceNumber(referenceNumber);
     }
 
     @GetMapping("/view-orders-by-status/{orderStatus}")

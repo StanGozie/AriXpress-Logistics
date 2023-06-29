@@ -21,7 +21,6 @@ public abstract class Person extends Base{
     private String lastName;
     private String companyName;
     private String email;
-//    (min = 4, max = 20)
     private String password;
     private String phoneNumber;
     private String confirmationToken;

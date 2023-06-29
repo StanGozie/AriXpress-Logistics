@@ -40,7 +40,7 @@ public interface StaffService {
 
     ApiResponse assignBikeToRider(AssignRiderToBikeDto assignRiderToBikeDto);
 
-    Optional<Orders> viewAnOrderById (Long orderId);
+    Optional<Orders> viewAnOrderByReferenceNumber (String referenceNumber);
 
     List<Orders> viewAllOrdersByStatus (OrderStatus orderStatus);
 
