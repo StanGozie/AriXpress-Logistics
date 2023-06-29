@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MailSendingException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     @ResponseBody
     public ApiResponse<String> handleMailSendingException(MailSendingException ex) {
         logger.error(ex.getMessage());
@@ -91,4 +91,13 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(InputMismatchException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    @ResponseBody
+    public ApiResponse<String> handleInputMismatchException(InputMismatchException ex) {
+        logger.error(ex.getMessage());
+        return new ApiResponse<>("Failed", "Error: " + ex.getMessage(), null);
+
+    }
 }
+

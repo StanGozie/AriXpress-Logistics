@@ -56,6 +56,9 @@ public class CustomerServiceImplementation implements CustomerService {
         if (isUserExist)
             throw new ValidationException("User Already Exists!");
 
+         if(!appUtil.isValidPassword(signUpDto.getPassword()))
+            throw new ValidationException("Password MUST be between 6 and 15 characters, and  must contain an UPPERCASE, a lowercase, a number, and a special character like #,@,%,$");
+
         if(!(signUpDto.getConfirmPassword().equals(signUpDto.getPassword())))
             throw new InputMismatchException("Confirm password and Password do not match!");
 
@@ -127,17 +130,21 @@ public class CustomerServiceImplementation implements CustomerService {
 
         Long clientCode = appUtil.generateRandomCode();
 
-        if(existingUser.isPresent()){
-            if(existingUser.get().isActive()) {
+
+
+        if(existingUser.isPresent() && existingUser.get().isActive()){
                 throw new AccountAlreadyActivatedException("This account has been activated. Please login");
             }
         existingUser.get().setCompanyName(completeBusinessRegistrationDto.getCompanyName());
         existingUser.get().setAddress(completeBusinessRegistrationDto.getAddress());
         existingUser.get().setPaymentType(completeBusinessRegistrationDto.getPaymentType());
         existingUser.get().setPaymentInterval(completeBusinessRegistrationDto.getPaymentInterval());
-        existingUser.get().setClientCode(clientCode); //CE stands for Corporate Entity
+        existingUser.get().setPhoneNumber(completeBusinessRegistrationDto.getPhoneNumber());
+        existingUser.get().setState(completeBusinessRegistrationDto.getState());
+        existingUser.get().setClientCode(clientCode);
+        existingUser.get().setActive(true);
         userRepository.save(existingUser.get());
-        }
+
         return ApiResponse.builder()
                 .status("Successful")
                 .message("Corporate Client Registration Successful.")
@@ -164,38 +171,39 @@ public class CustomerServiceImplementation implements CustomerService {
         return ResponseEntity.status(400).body("Some error occurred");
     }
 
-    @Override
-    public ResponseEntity<ApiResponse> forgotPassword(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
+    @Override //tested and working fine
+    public ResponseEntity<ApiResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+        Optional<User> user = userRepository.findByEmail(forgotPasswordDto.getEmail());
         if(user.isEmpty()) {
             throw new UserNotFoundException("User does not exist");
         }
-        String token = jwtUtils.resetPasswordToken(email);
-        User user1 = new User();
-        user1.setConfirmationToken(token);
-        userRepository.save(user1);
+        String token = jwtUtils.resetPasswordToken(forgotPasswordDto.getEmail());
+        user.get().setConfirmationToken(token);
+        userRepository.save(user.get());
 
         String URL = "http://localhost:8080/api/v1/auth/reset-password/?token=" + token;
         String link = "<h3>Hello " +"<br> Click the link below to reset your password <a href=" + URL + "><br>Activate</a></h3>";
-        emailService.sendEmail(email,"AriXpress: Reset your password", link);
+        emailService.sendEmail(forgotPasswordDto.getEmail(), "AriXpress: Reset your password", link);
         return ResponseEntity.ok(new ApiResponse<>("Sent", "Check your email to reset your password", null));
     }
 
-    @Override
+    @Override //tested and working fine
     public ResponseEntity<ApiResponse> resetPassword(ResetPasswordDto resetPasswordDto) {
         Optional<User> user = Optional.ofNullable(userRepository.findByConfirmationToken(resetPasswordDto.getConfirmationToken())
                 .orElseThrow(() -> new ValidationException("Token is incorrect or User does not exist!")));
 
-        if(!resetPasswordDto.getConfirmNewPassword().equals(passwordEncoder.encode(resetPasswordDto.getNewPassword()))){
+        if(!appUtil.isValidPassword(resetPasswordDto.getNewPassword()))
+            throw new ValidationException("Password MUST be between 6 and 15 characters, and  must contain an UPPERCASE, a lowercase, a number, and a special character like #,@,%,$");
+
+        if(!resetPasswordDto.getConfirmNewPassword().equals(resetPasswordDto.getNewPassword())){
             throw new InputMismatchException("Passwords do not match!");
         }
         user.get().setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));
         userRepository.save(user.get());
-
         return ResponseEntity.ok(new ApiResponse<>("Success", "Password reset successful.", null));
     }
 
-    @Override
+    @Override //tested and working fine
     public ResponseEntity<ApiResponse> changePassword(ChangePasswordDto changePasswordDto) {
         User user = appUtil.getLoggedInUser();
         if(!(changePasswordDto.getConfirmNewPassword().equals(changePasswordDto.getNewPassword()))){
@@ -214,8 +222,9 @@ public class CustomerServiceImplementation implements CustomerService {
 
         if(user.getCustomerType().equals(CustomerType.Corporate)) {
             Orders orders = new Orders();
-            orders.setReferenceNumber(id);
             orders.setClientCode(user.getClientCode());
+            orders.setThirdPartyPickUp(false);
+            orders.setReferenceNumber(id);
             orders.setCompanyName(user.getCompanyName());
             orders.setPickUpAddress(user.getAddress());
             orders.setDeliveryAddress(directDeliveryDto.getDeliveryAddress());
@@ -228,6 +237,7 @@ public class CustomerServiceImplementation implements CustomerService {
         }
         Orders orders = new Orders();
         orders.setClientCode(user.getClientCode());
+        orders.setThirdPartyPickUp(false);
         orders.setReferenceNumber(id);
         orders.setCustomerFirstName(user.getFirstName());
         orders.setCustomerLastName(user.getLastName());
@@ -251,15 +261,17 @@ public class CustomerServiceImplementation implements CustomerService {
 
     }
 
-    @Override
+    @Override //tested and is working fine
     public ResponseEntity<ApiResponse> thirdPartySender(ThirdPartySenderDto thirdPartySenderDto) {
         User user = appUtil.getLoggedInUser();
         String email = user.getEmail();
         Long id = user.getId();
+        String oid = appUtil.generateSerialNumber("AXL-");
 
         Orders order = new Orders();
         order.setThirdPartyPickUp(true);
         order.setClientCode(id);
+        order.setReferenceNumber(oid);
         order.setCustomerFirstName(user.getFirstName());
         order.setCustomerLastName(user.getLastName());
         order.setThirdPartyName(thirdPartySenderDto.getThirdPartyName());
@@ -285,18 +297,18 @@ public class CustomerServiceImplementation implements CustomerService {
         return ResponseEntity.ok(new ApiResponse<>("Success", "Delivery booked successfully. Details to be sent to you shortly.", null));
 
     }
-    @Override
+    @Override //Tested and is working fine
     public ResponseEntity<ApiResponse> cancelABooking(String referenceNumber, CancelABookingDto cancelABookingDto) {
         User user = appUtil.getLoggedInUser();
         Long clientCode = user.getClientCode();
         Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndReferenceNumber(clientCode, referenceNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("There is no order with the reference number " + referenceNumber)));
+                .orElseThrow(() -> new ResourceNotFoundException("You have no order with the reference number " + referenceNumber)));
 
         if(order.get().getOrderStatus().equals(OrderStatus.INPROGRESS)){
             return ResponseEntity.ok(new ApiResponse("Forbidden", "A rider has been dispatched to the address already.", null));
         }
         if(order.get().getOrderStatus().equals(OrderStatus.COMPLETED)){
-            return ResponseEntity.ok(new ApiResponse<>("Failed", "Unsupported Operation", null));
+            return ResponseEntity.ok(new ApiResponse<>("Failed", "This order has been completed!.", null));
         }
 
         order.get().setOrderStatus(OrderStatus.CANCELLED);
@@ -310,7 +322,7 @@ public class CustomerServiceImplementation implements CustomerService {
         return ResponseEntity.ok(new ApiResponse("Success", "Order has been cancelled", null));
     }
 
-    @Override
+    @Override //tested and is working fine
     public ResponseEntity<ApiResponse> confirmDelivery(String referenceNumber) {
         User user = appUtil.getLoggedInUser();
         Long clientCode = user.getClientCode();
@@ -321,14 +333,13 @@ public class CustomerServiceImplementation implements CustomerService {
         order.get().setOrderStatus(OrderStatus.COMPLETED);
         orderRepository.save(order.get());
 
-        //disengages the rider and changes rider status to FREE
         Optional<User> user1 = userRepository.findByStaffId(order.get().getRiderId());
         user1.get().setRiderStatus(RiderStatus.Free);
         userRepository.save(user1.get());
 
         return ResponseEntity.ok(new ApiResponse<>("Success", "Order status updated", null));
     }
-    @Override
+    @Override // Tested and is working fine
     public ResponseEntity<ApiResponse> giveFeedback(String referenceNumber, GiveFeedbackDto giveFeedbackDto) {
         User user = appUtil.getLoggedInUser();
         Long clientCode = user.getClientCode();
@@ -342,7 +353,7 @@ public class CustomerServiceImplementation implements CustomerService {
         return ResponseEntity.ok(new ApiResponse<>("Success", "Feedback Received. Thank you.", null));
     }
 
-    @Override
+    @Override //tested and is working fine
     public List<Orders> weeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
         User user = appUtil.getLoggedInUser();
         Long clientCode = user.getClientCode();

@@ -82,6 +82,12 @@ public class AppUtil {
         return email.matches(regex);
     }
 
+
+    public boolean isValidPassword(String password){
+        String regex = "^(?=.{8,15}$)(?=.*[A-Z])(?=.*[@#$%])(?=.*[a-z])(?=.*[0-9]).*";
+        return password.matches(regex);
+    }
+
     public String getFormattedNumber(String number){
         number=number.trim();
         if(number.startsWith("0"))
@@ -147,3 +153,7 @@ public class AppUtil {
         return reference.substring(0, 7);
     }
 }
+
+//^(?=.{8,32}$)(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).*
+
+//^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{8,20}$

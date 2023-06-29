@@ -5,6 +5,7 @@ import com.example.demo.dto.request.ChangePasswordDto;
 import com.example.demo.dto.request.CompleteBusinessRegistrationDto;
 import com.example.demo.dto.request.CompleteRegistrationDto;
 import com.example.demo.dto.request.DirectDeliveryDto;
+import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.GiveFeedbackDto;
 import com.example.demo.dto.request.LoginDto;
 import com.example.demo.dto.request.ResetPasswordDto;
@@ -12,7 +13,6 @@ import com.example.demo.dto.request.SignUpDto;
 import com.example.demo.dto.request.ThirdPartySenderDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.enums.OrderStatus;
 import com.example.demo.exceptions.ValidationException;
 import com.example.demo.model.Orders;
 import com.example.demo.service.CustomerService;
@@ -58,8 +58,8 @@ public class CustomerController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody String email) {
-        return customerService.forgotPassword(email);
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto forgotPasswordDto){
+        return customerService.forgotPassword(forgotPasswordDto);
     }
 
     @PostMapping("/reset-password")
@@ -92,7 +92,7 @@ public class CustomerController {
         return customerService.weeklyOrderSummary(weeklyOrderSummaryDto);
     }
 
-    @PatchMapping("/update-order-status/{referenceNumber}")
+    @PatchMapping("/confirm-receipt/{referenceNumber}")
     public ResponseEntity<ApiResponse> confirmOrderReceipt(@PathVariable String referenceNumber) {
         return customerService.confirmDelivery(referenceNumber);
     }

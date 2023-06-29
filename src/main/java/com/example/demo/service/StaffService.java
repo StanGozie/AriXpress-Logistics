@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ public interface StaffService {
 
     ResponseEntity<ApiResponse> changePassword (ChangePasswordDto changePasswordDto);
 
-    ResponseEntity<ApiResponse> dispatchOrder(Long id, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
+    ResponseEntity<ApiResponse> dispatchOrder(Long clientCode, String referenceNumber, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
 
     ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto);
 
@@ -56,7 +57,7 @@ public interface StaffService {
     List<Orders> viewAllOrders();
     List<Orders> clientWeeklyOrderSummary (WeeklyOrderSummaryDto weeklyOrderSummaryDto);
 
-    List<Orders> viewAllOrdersToday (LocalDate localDate);
+    List<Orders> viewAllOrdersToday ();
 
     List<Orders> viewAllOrdersInAMonth (OrdersHistoryDto ordersHistoryDto);
 

@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,12 +45,9 @@ public class StaffController {
 
     private final StaffService staffService;
 
-//    private final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     @PostMapping("/sign-up")
     public ResponseEntity<ApiResponse> signUp(@Valid @RequestBody SignUpDto signUpDto) {
-//        logger.info("====> Request body comes here {}", signUpDto);
-        System.out.println("Request body comes here " + signUpDto.toString());
         return staffService.signUp(signUpDto);
     }
     @PostMapping("/update-staff-info")
@@ -82,9 +80,9 @@ public class StaffController {
         return staffService.changePassword(changePasswordDto);
     }
 
-    @PostMapping("/dispatch-order/{id}")
-    public ResponseEntity<ApiResponse> dispatchOrder(@PathVariable Long id, HttpServletResponse response, @Valid @RequestBody DispatchOrderDto dispatchOrderDto) throws IOException {
-        return staffService.dispatchOrder(id, response, dispatchOrderDto);
+    @PostMapping("/dispatch-order/{clientCode}/{referenceNumber}")
+    public ResponseEntity<ApiResponse> dispatchOrder(@PathVariable Long clientCode, @PathVariable String referenceNumber, HttpServletResponse response, @Valid @RequestBody DispatchOrderDto dispatchOrderDto) throws IOException {
+        return staffService.dispatchOrder(clientCode, referenceNumber, response, dispatchOrderDto);
     }
 
     @PostMapping("/register-bike")
@@ -97,7 +95,7 @@ public class StaffController {
         return staffService.assignBikeToRider(assignRiderToBikeDto);
     }
 
-    @GetMapping("/view-busy-riders/{riderStatus}")
+    @GetMapping("/view-riders-by-status/{riderStatus}")
     public List<User> viewAllRidersByStatus(@PathVariable RiderStatus riderStatus) {
         return staffService.viewAllRidersByStatus(riderStatus);
     }
@@ -147,8 +145,8 @@ public class StaffController {
         return staffService.clientWeeklyOrderSummary(weeklyOrderSummaryDto);
     }
     @GetMapping("/daily-orders")
-    public List<Orders> viewAllOrdersToday(@Valid @RequestBody LocalDate localDate) {
-        return staffService.viewAllOrdersToday(localDate);
+    public List<Orders> viewAllOrdersToday() {
+        return staffService.viewAllOrdersToday();
     }
     @GetMapping("/weekly-orders")
     public List<Orders> viewAllOrdersInAWeek(@Valid @RequestBody OrdersHistoryDto ordersHistoryDto) {

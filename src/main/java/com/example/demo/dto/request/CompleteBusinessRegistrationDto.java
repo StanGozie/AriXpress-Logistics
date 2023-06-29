@@ -23,9 +23,13 @@ public class CompleteBusinessRegistrationDto {
     @NotBlank(message = "Address cannot be blank")
     private String address;
 
+    @NotBlank(message = "State cannot be blank")
+    private String state;
+
     @Enumerated(EnumType.STRING)
     private PaymentInterval paymentInterval;
 
     @Enumerated(EnumType.STRING)
     private PaymentType paymentType;
+
 }

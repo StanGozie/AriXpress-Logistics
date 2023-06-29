@@ -5,6 +5,7 @@ import com.example.demo.dto.request.ChangePasswordDto;
 import com.example.demo.dto.request.CompleteBusinessRegistrationDto;
 import com.example.demo.dto.request.CompleteRegistrationDto;
 import com.example.demo.dto.request.DirectDeliveryDto;
+import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.GiveFeedbackDto;
 import com.example.demo.dto.request.LoginDto;
 import com.example.demo.dto.request.ResetPasswordDto;
@@ -31,7 +32,7 @@ public interface CustomerService {
 
     ResponseEntity<String> login (LoginDto loginDto);
 
-    ResponseEntity<ApiResponse> forgotPassword (String email);
+    ResponseEntity<ApiResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto);
 
     ResponseEntity<ApiResponse> resetPassword (ResetPasswordDto resetPasswordDto);
 
