@@ -1,15 +1,10 @@
 package com.example.demo.repository;
 
-import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.model.Orders;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.MonthDay;
-import java.time.YearMonth;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
 

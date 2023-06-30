@@ -25,6 +25,7 @@ import com.example.demo.exceptions.AccountAlreadyActivatedException;
 import com.example.demo.exceptions.ResourceAlreadyExistsException;
 import com.example.demo.exceptions.ResourceNotFoundException;
 import com.example.demo.exceptions.RiderUnavailableException;
+import com.example.demo.exceptions.UnsupportedOperationException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.exceptions.ValidationException;
 import com.example.demo.model.Bike;
@@ -177,7 +178,7 @@ public class StaffServiceImplementation implements StaffService {
         user.get().setConfirmationToken(token);
         userRepository.save(user.get());
 
-        String URL = "http://localhost:8080/api/v1/auth/reset-password/?token=" + token;
+        String URL = "http://localhost:8080/api/v1/auth/staff/reset-password/?token=" + token;
         String link = "<h3>Hello " + "<br> Click the link below to reset your password <a href=" + URL + "><br>Activate</a></h3>";
         emailService.sendEmail(forgotPasswordDto.getEmail(), "AriXpress: Reset your password", link);
         return ResponseEntity.ok(new ApiResponse<>("Sent", "Check your email to reset your password", null));
@@ -212,14 +213,24 @@ public class StaffServiceImplementation implements StaffService {
 
 
     @Override  // tested and is working fine
-    public ResponseEntity<ApiResponse> dispatchOrder(Long clientCode, String referenceNumber, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException {
+    public ResponseEntity<ApiResponse> dispatchOrder(String referenceNumber, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException {
 
         User user = appUtil.getLoggedInUser();
         if (!(user.getRole().equals(Role.ADMIN)) || user.getRole().equals(Role.STAFF)) {
             throw new ValidationException("You are not permitted to perform this operation");
         }
-        Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndReferenceNumber(clientCode, referenceNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Order with the reference number " + referenceNumber + " does not exist")));
+//        Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndReferenceNumber(clientCode, referenceNumber)
+        Optional<Orders> order = Optional.ofNullable(orderRepository.findByReferenceNumber(referenceNumber))
+                .orElseThrow(() -> new ResourceNotFoundException("Order with the reference number " + referenceNumber + " does not exist"));
+
+        if(order.get().getOrderStatus().equals(OrderStatus.INPROGRESS))
+            throw new UnsupportedOperationException("This Order has been dispatched!");
+
+        if(order.get().getOrderStatus().equals(OrderStatus.COMPLETED))
+            throw new UnsupportedOperationException("This Order has been completed");
+
+        if(order.get().getOrderStatus().equals(OrderStatus.CANCELLED))
+            throw new UnsupportedOperationException("This order has been cancelled by the customer");
 
         Optional<User> user1 = Optional.ofNullable(userRepository.findByStaffId(dispatchOrderDto.getRiderId())
                 .orElseThrow(() -> new UserNotFoundException("Rider does not exist! Check the rider Id")));

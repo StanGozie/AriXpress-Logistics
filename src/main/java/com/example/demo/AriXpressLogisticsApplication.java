@@ -6,8 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class AriXpressLogisticsApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(AriXpressLogisticsApplication.class, args);
-	}
-
+		SpringApplication.run(AriXpressLogisticsApplication.class, args);}
 }
 

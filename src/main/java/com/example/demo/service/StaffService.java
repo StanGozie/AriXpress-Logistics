@@ -32,7 +32,7 @@ public interface StaffService {
 
     ResponseEntity<ApiResponse> changePassword (ChangePasswordDto changePasswordDto);
 
-    ResponseEntity<ApiResponse> dispatchOrder(Long clientCode, String referenceNumber, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
+    ResponseEntity<ApiResponse> dispatchOrder(String referenceNumber, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException;
 
     ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto);
 

@@ -48,7 +48,7 @@ public class CustomerController {
     }
 
     @PostMapping("/corporate/complete-business-registration")
-    public ApiResponse completeBusinessRegistration(@Valid @RequestBody CompleteBusinessRegistrationDto completeBusinessRegistrationDto) {
+    public ResponseEntity<ApiResponse> completeBusinessRegistration(@Valid @RequestBody CompleteBusinessRegistrationDto completeBusinessRegistrationDto) {
         return customerService.completeBusinessRegistration(completeBusinessRegistrationDto);
     }
 

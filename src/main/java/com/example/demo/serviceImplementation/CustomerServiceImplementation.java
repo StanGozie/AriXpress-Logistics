@@ -26,6 +26,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.InputMismatchException;
@@ -77,39 +78,39 @@ public class CustomerServiceImplementation implements CustomerService {
             user.setConfirmationToken(token);
             userRepository.save(user);
 
-            String URL = "http://localhost:8080/api/v1/auth/complete-business-registration/?token=" + token;
+            String URL = "http://localhost:8080/api/v1/auth/client/corporate/complete-business-registration/?token=" + token;
             String link = "<h3>Hello "  + signUpDto.getFirstName()  +"<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
-
             emailService.sendEmail(signUpDto.getEmail(),"AriXpress: Verify Your Account", link);
         }
+        else{
+            User user = new User();
+            user.setFirstName(signUpDto.getFirstName());
+            user.setLastName(signUpDto.getLastName());
+            user.setEmail(signUpDto.getEmail());
+            user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
+            user.setRole((Role.CUSTOMER));
+            user.setCustomerType(CustomerType.Individual);
+            String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
+            user.setConfirmationToken(token);
+            userRepository.save(user);
 
-        User user = new User();
-        user.setFirstName(signUpDto.getFirstName());
-        user.setLastName(signUpDto.getLastName());
-        user.setEmail(signUpDto.getEmail());
-        user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
-        user.setRole((Role.CUSTOMER));
-        user.setCustomerType(CustomerType.Individual);
-        String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
-        user.setConfirmationToken(token);
-        userRepository.save(user);
-
-        String URL = "http://localhost:8080/api/v1/auth/complete-registration/?token=" + token;
-        String link = "<h3>Hello "  + signUpDto.getFirstName()  +"<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
-
-        emailService.sendEmail(signUpDto.getEmail(),"AriXpress: Verify Your Account", link);
+            String URL = "http://localhost:8080/api/v1/auth/client/complete-registration/?token=" + token;
+            String link = "<h3>Hello " + signUpDto.getFirstName() + "<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
+            emailService.sendEmail(signUpDto.getEmail(), "AriXpress: Verify Your Account", link);
+            }
 
         return ResponseEntity.ok(new ApiResponse<>("Successful", "SignUp Successful. Check your mail to activate your account", null));
     }
 
     @Override //tested and working fine
     public ResponseEntity<ApiResponse> completeRegistration(CompleteRegistrationDto completeRegistrationDto) {
-        Optional<User> existingUser = userRepository.findByConfirmationToken(completeRegistrationDto.getToken());
+        Optional<User> existingUser = Optional.ofNullable(userRepository.findByConfirmationToken(completeRegistrationDto.getToken())
+                .orElseThrow(() -> new UserNotFoundException("User does not exist!")));
 
-        if (existingUser.isPresent()) {
-            if (existingUser.get().isActive()) {
-                throw new AccountAlreadyActivatedException("This account is already activated. Pls login");
-            }
+        Boolean activeUser = existingUser.get().isActive();
+        if (activeUser.equals(true)) {
+            throw new AccountAlreadyActivatedException("This account is already activated. Pls login");
+        }
             Long clientCode = appUtil.generateRandomCode();
             existingUser.get().setDob(completeRegistrationDto.getDob());
             existingUser.get().setAddress(completeRegistrationDto.getAddress());
@@ -121,20 +122,17 @@ public class CustomerServiceImplementation implements CustomerService {
             userRepository.save(existingUser.get());
             return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", "Your client number is "+clientCode));
         }
-        return ResponseEntity.ok(new ApiResponse<>("Failed", "This user does not exist. Kindly sign up.", null));
-    }
 
     @Override //tested and working fine
-    public ApiResponse completeBusinessRegistration(CompleteBusinessRegistrationDto completeBusinessRegistrationDto) {
-        Optional<User> existingUser = userRepository.findByConfirmationToken(completeBusinessRegistrationDto.getToken());
+    public ResponseEntity<ApiResponse> completeBusinessRegistration(CompleteBusinessRegistrationDto completeBusinessRegistrationDto) {
+        Optional<User> existingUser = Optional.ofNullable(userRepository.findByConfirmationToken(completeBusinessRegistrationDto.getToken())
+                .orElseThrow(() -> new UserNotFoundException("User does not exist!")));
 
+        Boolean activeUser = existingUser.get().isActive();
+        if (activeUser.equals(true)) {
+            throw new AccountAlreadyActivatedException("This account is already activated. Pls login");
+        }
         Long clientCode = appUtil.generateRandomCode();
-
-
-
-        if(existingUser.isPresent() && existingUser.get().isActive()){
-                throw new AccountAlreadyActivatedException("This account has been activated. Please login");
-            }
         existingUser.get().setCompanyName(completeBusinessRegistrationDto.getCompanyName());
         existingUser.get().setAddress(completeBusinessRegistrationDto.getAddress());
         existingUser.get().setPaymentType(completeBusinessRegistrationDto.getPaymentType());
@@ -145,11 +143,7 @@ public class CustomerServiceImplementation implements CustomerService {
         existingUser.get().setActive(true);
         userRepository.save(existingUser.get());
 
-        return ApiResponse.builder()
-                .status("Successful")
-                .message("Corporate Client Registration Successful.")
-                .data("You unique code is "+ clientCode)
-                .build();
+        return ResponseEntity.ok(new ApiResponse("Successful", "Corporate Client Registration Successful.", "You unique code is "+ clientCode ));
     }
 
     @Override //tested and working fine
@@ -181,8 +175,8 @@ public class CustomerServiceImplementation implements CustomerService {
         user.get().setConfirmationToken(token);
         userRepository.save(user.get());
 
-        String URL = "http://localhost:8080/api/v1/auth/reset-password/?token=" + token;
-        String link = "<h3>Hello " +"<br> Click the link below to reset your password <a href=" + URL + "><br>Activate</a></h3>";
+        String URL = "http://localhost:8080/api/v1/auth/client/reset-password/?token=" + token;
+        String link = "<h3>Hello " +"<br> Click the link below to reset your password <a href=" + URL + "><br>Reset Password</a></h3>";
         emailService.sendEmail(forgotPasswordDto.getEmail(), "AriXpress: Reset your password", link);
         return ResponseEntity.ok(new ApiResponse<>("Sent", "Check your email to reset your password", null));
     }
@@ -200,6 +194,7 @@ public class CustomerServiceImplementation implements CustomerService {
         }
         user.get().setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));
         userRepository.save(user.get());
+
         return ResponseEntity.ok(new ApiResponse<>("Success", "Password reset successful.", null));
     }
 
@@ -219,6 +214,7 @@ public class CustomerServiceImplementation implements CustomerService {
         User user = appUtil.getLoggedInUser();
         String email = user.getEmail();
         String id = appUtil.generateSerialNumber("AXL-");
+        String adminEmail = "chigozieenyoghasi@yahoo.com";
 
         if(user.getCustomerType().equals(CustomerType.Corporate)) {
             Orders orders = new Orders();
@@ -234,6 +230,7 @@ public class CustomerServiceImplementation implements CustomerService {
             orders.setItemQuantity(directDeliveryDto.getItemQuantity());
             orders.setOrderStatus(OrderStatus.PENDING);
             orders.setEmail(email);
+            orderRepository.save(orders);
         }
         Orders orders = new Orders();
         orders.setClientCode(user.getClientCode());
@@ -253,9 +250,13 @@ public class CustomerServiceImplementation implements CustomerService {
         orders.setEmail(email);
         orderRepository.save(orders);
 
-        String URL = "http://localhost:8080/api/v1/auth/new-order/?order=" + orders.getId();
-        String link = "<h3>Hello " +"<br> Click the link below dispatch the new order <a href=" + URL + "><br>Activate</a></h3>";
-        emailService.sendEmail(email,"AriXpress: A new order", link);
+        String url = UriComponentsBuilder.fromUriString("http://localhost:8080/api/v1/auth/dispatch-order/")
+                .queryParam("clientCode",orders.getClientCode())
+                .queryParam("referenceNumber", orders.getReferenceNumber())
+                .build()
+                .toUriString();
+        String link = "<h3>Hello " +"<br> Click the link to dispatch a new order <a href=" + url + "><br>Dispatch</a></h3>";
+        emailService.sendEmail(adminEmail,"AriXpress: A new order", link);
 
         return ResponseEntity.ok(new ApiResponse<>("Success", "Delivery booked successfully. Details to be sent to you shortly.", null));
 
@@ -265,6 +266,7 @@ public class CustomerServiceImplementation implements CustomerService {
     public ResponseEntity<ApiResponse> thirdPartySender(ThirdPartySenderDto thirdPartySenderDto) {
         User user = appUtil.getLoggedInUser();
         String email = user.getEmail();
+        String adminEmail = "chigozieenyoghasi@yahoo.com";
         Long id = user.getId();
         String oid = appUtil.generateSerialNumber("AXL-");
 
@@ -290,9 +292,13 @@ public class CustomerServiceImplementation implements CustomerService {
         order.setDistance(23.4);
         orderRepository.save(order);
 
-        String URL = "http://localhost:8080/api/v1/auth/new-order/?order=" + order.getId();
-        String link = "<h3>Hello " +"<br> Click the link below dispatch the new order <a href=" + URL + "><br>Activate</a></h3>";
-        emailService.sendEmail("chigozieenyoghasi@yahoo.com","AriXpress: A new order", link);
+        String url = UriComponentsBuilder.fromUriString("http://localhost:8080/api/v1/auth/dispatch-order/")
+                .queryParam("clientCode",order.getClientCode())
+                .queryParam("referenceNumber", order.getReferenceNumber())
+                .build()
+                .toUriString();
+        String link = "<h3>Hello " +"<br> Click the link to dispatch a new order <a href=" + url + "><br>Dispatch</a></h3>";
+        emailService.sendEmail(adminEmail,"AriXpress: A new order", link);
 
         return ResponseEntity.ok(new ApiResponse<>("Success", "Delivery booked successfully. Details to be sent to you shortly.", null));
 
@@ -301,6 +307,7 @@ public class CustomerServiceImplementation implements CustomerService {
     public ResponseEntity<ApiResponse> cancelABooking(String referenceNumber, CancelABookingDto cancelABookingDto) {
         User user = appUtil.getLoggedInUser();
         Long clientCode = user.getClientCode();
+        String adminEmail = "chigozieenyoghasi@yahoo.com";
         Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndReferenceNumber(clientCode, referenceNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("You have no order with the reference number " + referenceNumber)));
 
@@ -315,11 +322,13 @@ public class CustomerServiceImplementation implements CustomerService {
         order.get().setReasonForOrderCancellation(cancelABookingDto.getReasonForOrderCancellation());
         orderRepository.save(order.get());
 
-        String URL = "http://localhost:8080/api/v1/auth/cancelled-order/?order=" + order.get().getId();
-        String link = "<h3>Hello " +"<br> This order has been cancelled.<a href=" + URL + "><br>Activate</a></h3>" + '\n'+
-                "Reason for cancellation:  " + order.get().getReasonForOrderCancellation();
-        emailService.sendEmail("chigozieenyoghasi@yahoo.com","AriXpress: Cancelled Order", link);
-        return ResponseEntity.ok(new ApiResponse("Success", "Order has been cancelled", null));
+        String url = UriComponentsBuilder.fromUriString("http://localhost:8080/api/v1/auth/view-an-order/")
+                .queryParam("referenceNumber", order.get().getReferenceNumber())
+                .build()
+                .toUriString();
+        String link = "<h3>Hello Admin, " +"<br> An order has been cancelled. Click the link below to see details<a href=" + url + "><br>Cancelled Order</a></h3>";
+        emailService.sendEmail(adminEmail,"AriXpress: Cancelled Order", link);
+        return ResponseEntity.ok(new ApiResponse("Success", "Your booking has been cancelled", null));
     }
 
     @Override //tested and is working fine
@@ -330,6 +339,7 @@ public class CustomerServiceImplementation implements CustomerService {
             throw new ValidationException("You cannot perform this action!");
         Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndReferenceNumber(clientCode, referenceNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with Id " + referenceNumber + " was not found")));
+
         order.get().setOrderStatus(OrderStatus.COMPLETED);
         orderRepository.save(order.get());
 

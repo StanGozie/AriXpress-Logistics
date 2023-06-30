@@ -38,7 +38,7 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1/auth/staff")
 public class StaffController {
 
     private final StaffService staffService;
@@ -78,9 +78,9 @@ public class StaffController {
         return staffService.changePassword(changePasswordDto);
     }
 
-    @PostMapping("/dispatch-order/{clientCode}/{referenceNumber}")
-    public ResponseEntity<ApiResponse> dispatchOrder(@PathVariable Long clientCode, @PathVariable String referenceNumber, HttpServletResponse response, @Valid @RequestBody DispatchOrderDto dispatchOrderDto) throws IOException {
-        return staffService.dispatchOrder(clientCode, referenceNumber, response, dispatchOrderDto);
+    @PostMapping("/dispatch-order/{referenceNumber}")
+    public ResponseEntity<ApiResponse> dispatchOrder(@PathVariable String referenceNumber, HttpServletResponse response, @Valid @RequestBody DispatchOrderDto dispatchOrderDto) throws IOException {
+        return staffService.dispatchOrder(referenceNumber, response, dispatchOrderDto);
     }
 
     @PostMapping("/register-bike")
