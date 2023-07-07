@@ -2,18 +2,12 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.request.CancelABookingDto;
 import com.example.demo.dto.request.ChangePasswordDto;
-import com.example.demo.dto.request.CompleteBusinessRegistrationDto;
-import com.example.demo.dto.request.CompleteRegistrationDto;
 import com.example.demo.dto.request.DirectDeliveryDto;
-import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.GiveFeedbackDto;
-import com.example.demo.dto.request.LoginDto;
-import com.example.demo.dto.request.ResetPasswordDto;
-import com.example.demo.dto.request.SignUpDto;
 import com.example.demo.dto.request.ThirdPartySenderDto;
+import com.example.demo.dto.request.UpdateCustomerDetailsDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.exceptions.ValidationException;
 import com.example.demo.model.Orders;
 import com.example.demo.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -35,37 +29,6 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerService customerService;
-
-    @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse> signUp(@RequestBody @Valid SignUpDto signUpDto) throws ValidationException {
-        System.out.println("Request body comes here " + signUpDto.toString());
-        return customerService.signUp(signUpDto);
-    }
-
-    @PostMapping("/complete-registration")
-    public ResponseEntity<ApiResponse> completeRegistration(@Valid @RequestBody CompleteRegistrationDto completeRegistrationDto) {
-        return customerService.completeRegistration(completeRegistrationDto);
-    }
-
-    @PostMapping("/corporate/complete-business-registration")
-    public ResponseEntity<ApiResponse> completeBusinessRegistration(@Valid @RequestBody CompleteBusinessRegistrationDto completeBusinessRegistrationDto) {
-        return customerService.completeBusinessRegistration(completeBusinessRegistrationDto);
-    }
-
-        @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginDto loginDto) {
-        return customerService.login(loginDto);
-    }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto forgotPasswordDto){
-        return customerService.forgotPassword(forgotPasswordDto);
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
-        return customerService.resetPassword(resetPasswordDto);
-    }
 
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse> changePassword(@Valid @RequestBody ChangePasswordDto changePasswordDto) {
@@ -102,5 +65,10 @@ public class CustomerController {
         return customerService.giveFeedback(referenceNumber, giveFeedbackDto);
     }
 
+    @PatchMapping("/update-customer-details")
+    public ResponseEntity<ApiResponse> updateCustomerDetails(@Valid @RequestBody UpdateCustomerDetailsDto updateCustomerDetailsDto) {
+        return customerService.updateCustomerDetails(updateCustomerDetailsDto);
+    }
 
-}
+
+    }

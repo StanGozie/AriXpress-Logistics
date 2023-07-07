@@ -7,9 +7,11 @@ import com.example.demo.dto.request.DispatchOrderDto;
 import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.LoginDto;
 import com.example.demo.dto.request.OrdersHistoryDto;
+import com.example.demo.dto.request.PeriodicBillDto;
 import com.example.demo.dto.request.RegisterBikeDto;
 import com.example.demo.dto.request.RegisterRiderDto;
 import com.example.demo.dto.request.ResetPasswordDto;
+import com.example.demo.dto.request.RidersDeliveryCountPerMonthDto;
 import com.example.demo.dto.request.SignUpDto;
 import com.example.demo.dto.request.StaffRelevantDetailsDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
@@ -17,7 +19,7 @@ import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.enums.RiderStatus;
 import com.example.demo.model.Orders;
-import com.example.demo.model.User;
+import com.example.demo.model.Staff;
 import com.example.demo.service.StaffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,34 +46,9 @@ public class StaffController {
 
     private final StaffService staffService;
 
-
-    @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse> signUp(@Valid @RequestBody SignUpDto signUpDto) {
-        return staffService.signUp(signUpDto);
-    }
     @PostMapping("/update-staff-info")
     public ResponseEntity<ApiResponse> updateStaffInformation(@Valid @RequestBody StaffRelevantDetailsDto staffRelevantDetailsDto) {
-    return staffService.updateStaffInformation(staffRelevantDetailsDto);
-    }
-
-        @PostMapping("/complete-registration")
-    public ResponseEntity<ApiResponse> completeRegistration(@Valid @RequestBody CompleteRegistrationDto completeRegistrationDto) {
-        return staffService.completeRegistration(completeRegistrationDto);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginDto loginDto) {
-        return staffService.login(loginDto);
-    }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto forgotPasswordDto) {
-        return staffService.forgotPassword(forgotPasswordDto);
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
-        return staffService.resetPassword(resetPasswordDto);
+        return staffService.updateStaffInformation(staffRelevantDetailsDto);
     }
 
     @PostMapping("/change-password")
@@ -94,12 +72,12 @@ public class StaffController {
     }
 
     @GetMapping("/view-riders-by-status/{riderStatus}")
-    public List<User> viewAllRidersByStatus(@PathVariable RiderStatus riderStatus) {
+    public List<Staff> viewAllRidersByStatus(@PathVariable RiderStatus riderStatus) {
         return staffService.viewAllRidersByStatus(riderStatus);
     }
 
-        @GetMapping("/view-an-order/{referenceNumber}")
-        Optional<Orders> viewAnOrderByReferenceNumber (@PathVariable String referenceNumber){
+    @GetMapping("/view-an-order/{referenceNumber}")
+    Optional<Orders> viewAnOrderByReferenceNumber(@PathVariable String referenceNumber) {
         return staffService.viewAnOrderByReferenceNumber(referenceNumber);
     }
 
@@ -109,7 +87,7 @@ public class StaffController {
     }
 
     @GetMapping("/count-trips/{staffId}")
-    Integer countRidesPerRider(@PathVariable Long staffId){
+    Integer countRidesPerRider(@PathVariable Long staffId) {
         return staffService.countRidesPerRider(staffId);
     }
 
@@ -129,7 +107,7 @@ public class StaffController {
     }
 
     @GetMapping("/view-staff-details/{staffId}")
-    public Optional<User> viewStaffDetails(@PathVariable Long staffId) {
+    public Optional<Staff> viewStaffDetails(@PathVariable Long staffId) {
         return staffService.viewStaffDetails(staffId);
     }
 
@@ -142,16 +120,35 @@ public class StaffController {
     public List<Orders> clientWeeklyOrderSummary(@Valid @RequestBody WeeklyOrderSummaryDto weeklyOrderSummaryDto) throws Exception {
         return staffService.clientWeeklyOrderSummary(weeklyOrderSummaryDto);
     }
+
     @GetMapping("/daily-orders")
     public List<Orders> viewAllOrdersToday() {
         return staffService.viewAllOrdersToday();
     }
+
     @GetMapping("/weekly-orders")
     public List<Orders> viewAllOrdersInAWeek(@Valid @RequestBody OrdersHistoryDto ordersHistoryDto) {
         return staffService.viewAllOrdersInAWeek(ordersHistoryDto);
     }
+
     @GetMapping("/monthly-orders")
     public List<Orders> viewAllOrdersInAMonth(@Valid @RequestBody OrdersHistoryDto ordersHistoryDto) {
         return staffService.viewAllOrdersInAMonth(ordersHistoryDto);
     }
-}
+
+    @GetMapping("/riders-deliveries-count/{riderId}")
+    public int viewDeliveryCountOfRider(@PathVariable Long riderId, @Valid @RequestBody RidersDeliveryCountPerMonthDto ridersDeliveryCountPerMonthDto) {
+        return staffService.viewDeliveryCountOfRider(riderId,ridersDeliveryCountPerMonthDto);
+    }
+
+    @GetMapping("/clients-bill/{clientCode}")
+    public BigDecimal weeklyBill(@PathVariable Long clientCode, @Valid @RequestBody PeriodicBillDto periodicBillDto) {
+        return staffService.weeklyBill(clientCode, periodicBillDto);
+    }
+
+    @GetMapping("/clients-orders-invoice/{clientCode}")
+    public List<Orders> generatePeriodicOrderDetailsPdf (@PathVariable Long clientCode, HttpServletResponse response, @Valid @RequestBody PeriodicBillDto periodicBillDto) throws IOException {
+        return staffService.generatePeriodicOrderDetailsPdf(clientCode, response,periodicBillDto);
+    }
+
+    }

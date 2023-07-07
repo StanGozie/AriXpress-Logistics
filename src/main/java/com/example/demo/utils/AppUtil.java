@@ -2,17 +2,18 @@ package com.example.demo.utils;
 
 import com.example.demo.exceptions.ResourceNotFoundException;
 import com.example.demo.exceptions.UserNotFoundException;
-import com.example.demo.model.User;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.model.Customer;
+import com.example.demo.model.Staff;
+import com.example.demo.repository.CustomerRepository;
+import com.example.demo.repository.StaffRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -23,19 +24,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 @Component
+@RequiredArgsConstructor
 public class AppUtil {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final CustomerRepository customerRepository;
+    private final StaffRepository staffRepository;
 
 
-
-    public User getLoggedInUser() throws ResourceNotFoundException {
+    public Staff getLoggedInStaff() throws ResourceNotFoundException {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        return userRepository.findByEmail(((UserDetails)principal).getUsername())
+        return staffRepository.findByEmail(((UserDetails)principal).getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Error getting logged in user"));
     }
+
+    public Customer getLoggedInCustomer() throws ResourceNotFoundException {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return customerRepository.findByEmail(((UserDetails)principal).getUsername())
+                .orElseThrow(() -> new UserNotFoundException("Error getting logged in user"));
+    }
+
 
     public List<String> splitStringIntoAList(String delimitedString){
 

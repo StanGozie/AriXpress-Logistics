@@ -10,9 +10,11 @@ import com.example.demo.dto.request.DispatchOrderDto;
 import com.example.demo.dto.request.ForgotPasswordDto;
 import com.example.demo.dto.request.LoginDto;
 import com.example.demo.dto.request.OrdersHistoryDto;
+import com.example.demo.dto.request.PeriodicBillDto;
 import com.example.demo.dto.request.RegisterBikeDto;
 import com.example.demo.dto.request.RegisterRiderDto;
 import com.example.demo.dto.request.ResetPasswordDto;
+import com.example.demo.dto.request.RidersDeliveryCountPerMonthDto;
 import com.example.demo.dto.request.SignUpDto;
 import com.example.demo.dto.request.StaffRelevantDetailsDto;
 import com.example.demo.dto.request.WeeklyOrderSummaryDto;
@@ -30,10 +32,10 @@ import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.exceptions.ValidationException;
 import com.example.demo.model.Bike;
 import com.example.demo.model.Orders;
-import com.example.demo.model.User;
+import com.example.demo.model.Staff;
 import com.example.demo.repository.BikeRepository;
 import com.example.demo.repository.OrderRepository;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.StaffRepository;
 import com.example.demo.service.StaffService;
 import com.example.demo.utils.AppUtil;
 import com.lowagie.text.Document;
@@ -43,6 +45,7 @@ import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.criterion.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -53,23 +56,23 @@ import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 public class StaffServiceImplementation implements StaffService {
 
-    private final UserRepository userRepository;
+    private final StaffRepository staffRepository;
     private final EmailService emailService;
     private final BikeRepository bikeRepository;
     private final AppUtil appUtil;
@@ -81,36 +84,36 @@ public class StaffServiceImplementation implements StaffService {
 
 
     @Override  // tested and is working fine
-    public ResponseEntity<ApiResponse> signUp(SignUpDto signUpDto) throws ValidationException {
+    public ResponseEntity<ApiResponse> staffSignUp(SignUpDto signUpDto) throws ValidationException {
         if (!appUtil.isValidEmail(signUpDto.getEmail()))
             throw new ValidationException("Email is invalid");
 
-        Boolean isUserExist = userRepository.existsByEmail(signUpDto.getEmail());
+        Boolean isUserExist = staffRepository.existsByEmail(signUpDto.getEmail());
         if (isUserExist)
             throw new ValidationException("User Already Exists!");
 
-        if(!appUtil.isValidPassword(signUpDto.getPassword()))
-            throw new ValidationException("Password MUST be between 6 and 15 characters, and  must contain an UPPERCASE, a lowercase, a number, and a special character like #,@,%,$");
+        if((!appUtil.isValidPassword(signUpDto.getPassword())))
+            throw new ValidationException("Password MUST be between 8 and 15 characters, and  must contain an UPPERCASE, a lowercase, a number, and a special character like #,@,%,$");
 
         if (!(signUpDto.getConfirmPassword().equals(signUpDto.getPassword())))
             throw new InputMismatchException("Confirm Password and Password do not match!");
 
         Long staffId = appUtil.generateRandomCode();
 
-        User user = new User();
-        user.setFirstName(signUpDto.getFirstName());
-        user.setLastName(signUpDto.getLastName());
-        user.setEmail(signUpDto.getEmail());
-        user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
-        user.setRole(Role.STAFF);
+        Staff staff = new Staff();
+        staff.setFirstName(signUpDto.getFirstName());
+        staff.setLastName(signUpDto.getLastName());
+        staff.setEmail(signUpDto.getEmail());
+        staff.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
+        staff.setRole(Role.STAFF);
         if(signUpDto.getEmail().equals("chigoziestanleyenyoghasi@gmail.com") || signUpDto.getEmail().equals("chigozieenyoghasi@yahoo.com")){
-            user.setRole(Role.SUPER_ADMIN);}
-        user.setStaffId(staffId);
+            staff.setRole(Role.SUPER_ADMIN);}
+        staff.setStaffId(staffId);
         String token = jwtUtils.generateSignUpConfirmationToken(signUpDto.getEmail());
-        user.setConfirmationToken(token);
-        userRepository.save(user);
+        staff.setConfirmationToken(token);
+        staffRepository.save(staff);
 
-        String URL = "http://localhost:8080/api/v1/auth/verify-link/?token=" + token;
+        String URL = "http://localhost:8080/api/v1/auth//complete-registration/?token=" + token;
         String link = "<h3>Hello " + signUpDto.getFirstName() + "<br> Click the link below to activate your account <a href=" + URL + "><br>Activate</a></h3>";
 
         emailService.sendEmail(signUpDto.getEmail(), "AriXpress: Verify Your Account", link);
@@ -121,7 +124,8 @@ public class StaffServiceImplementation implements StaffService {
     @Override  // tested and is working fine
     public ResponseEntity<ApiResponse> updateStaffInformation(StaffRelevantDetailsDto staffRelevantDetailsDto) {
 
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
+
         if (user.getRole().equals(Role.STAFF) || user.getRole().equals(Role.SUPER_ADMIN) || user.getRole().equals(Role.ADMIN))
 
         user.setState(staffRelevantDetailsDto.getStateOfOrigin());
@@ -130,13 +134,13 @@ public class StaffServiceImplementation implements StaffService {
         user.setNextOfKinAddress(staffRelevantDetailsDto.getNextOfKinAddress());
         user.setNextOfKinPhoneNumber(staffRelevantDetailsDto.getNextOfKinPhoneNumber());
         user.setStateOfOrigin(staffRelevantDetailsDto.getStateOfOrigin());
-        userRepository.save(user);
+        staffRepository.save(user);
         return ResponseEntity.ok(new ApiResponse("Successful", "Staff information update successful", null));
     }
 
     @Override // tested and is working fine
-    public ResponseEntity<ApiResponse> completeRegistration(CompleteRegistrationDto completeRegistrationDto) {
-        Optional<User> existingUser = userRepository.findByConfirmationToken(completeRegistrationDto.getToken());
+    public ResponseEntity<ApiResponse> staffCompleteRegistration(CompleteRegistrationDto completeRegistrationDto) {
+        Optional<Staff> existingUser = staffRepository.findByConfirmationToken(completeRegistrationDto.getToken());
 
         if (existingUser.isPresent()) {
             if (existingUser.get().isActive()) {
@@ -147,17 +151,17 @@ public class StaffServiceImplementation implements StaffService {
             existingUser.get().setPhoneNumber(completeRegistrationDto.getPhoneNumber());
             existingUser.get().setGender(completeRegistrationDto.getGender());
             existingUser.get().setActive(true);
-            userRepository.save(existingUser.get());
+            staffRepository.save(existingUser.get());
             return ResponseEntity.ok(new ApiResponse<>("Successful", "Registration completed", "Your unique staff number is " + existingUser.get().getStaffId()));
         }
         return ResponseEntity.ok(new ApiResponse<>("Failed", "This user does not exist. Kindly sign up.", null));
     }
 
     @Override // tested and is working fine
-    public ResponseEntity<String> login(LoginDto loginDto) {
-        User users = userRepository.findByEmail(loginDto.getEmail())
+    public ResponseEntity<String> staffLogin(LoginDto loginDto) {
+        Staff staff = staffRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User Not Found"));
-        if (!users.isActive()) {
+        if (!staff.isActive()) {
             throw new ValidationException("User Not Active. Kindly complete your registration.");
         }
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
@@ -169,14 +173,14 @@ public class StaffServiceImplementation implements StaffService {
     }
 
     @Override // tested and is working fine
-    public ResponseEntity<ApiResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
-        Optional<User> user = userRepository.findByEmail(forgotPasswordDto.getEmail());
+    public ResponseEntity<ApiResponse> staffForgotPassword(ForgotPasswordDto forgotPasswordDto) {
+        Optional<Staff> user = staffRepository.findByEmail(forgotPasswordDto.getEmail());
         if (user.isEmpty()) {
             throw new UserNotFoundException("User does not exist");
         }
         String token = jwtUtils.resetPasswordToken(forgotPasswordDto.getEmail());
         user.get().setConfirmationToken(token);
-        userRepository.save(user.get());
+        staffRepository.save(user.get());
 
         String URL = "http://localhost:8080/api/v1/auth/staff/reset-password/?token=" + token;
         String link = "<h3>Hello " + "<br> Click the link below to reset your password <a href=" + URL + "><br>Activate</a></h3>";
@@ -185,8 +189,8 @@ public class StaffServiceImplementation implements StaffService {
     }
 
     @Override // tested and is working fine
-    public ResponseEntity<ApiResponse> resetPassword(ResetPasswordDto resetPasswordDto) {
-        Optional<User> user = Optional.ofNullable(userRepository.findByConfirmationToken(resetPasswordDto.getConfirmationToken())
+    public ResponseEntity<ApiResponse> staffResetPassword(ResetPasswordDto resetPasswordDto) {
+        Optional<Staff> user = Optional.ofNullable(staffRepository.findByConfirmationToken(resetPasswordDto.getConfirmationToken())
                 .orElseThrow(() -> new ValidationException("Token is incorrect or User does not exist!")));
 
         if(!appUtil.isValidPassword(resetPasswordDto.getNewPassword()))
@@ -196,18 +200,18 @@ public class StaffServiceImplementation implements StaffService {
             throw new InputMismatchException("Passwords do not match!");
         }
         user.get().setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));
-        userRepository.save(user.get());
+        staffRepository.save(user.get());
         return ResponseEntity.ok(new ApiResponse<>("Success", "Password reset successful.", null));
     }
 
     @Override  // tested and is working fine
     public ResponseEntity<ApiResponse> changePassword(ChangePasswordDto changePasswordDto) {
-        User user = appUtil.getLoggedInUser();
+        Staff staff = appUtil.getLoggedInStaff();
         if (!(changePasswordDto.getConfirmNewPassword().equals(changePasswordDto.getNewPassword()))) {
             throw new InputMismatchException("Confirm password and Password do not match!");
         }
-        user.setPassword(passwordEncoder.encode(changePasswordDto.getNewPassword()));
-        userRepository.save(user);
+        staff.setPassword(passwordEncoder.encode(changePasswordDto.getNewPassword()));
+        staffRepository.save(staff);
         return ResponseEntity.ok(new ApiResponse<>("Success", "Password change successful", null));
     }
 
@@ -215,11 +219,10 @@ public class StaffServiceImplementation implements StaffService {
     @Override  // tested and is working fine
     public ResponseEntity<ApiResponse> dispatchOrder(String referenceNumber, HttpServletResponse response, DispatchOrderDto dispatchOrderDto) throws IOException {
 
-        User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ADMIN)) || user.getRole().equals(Role.STAFF)) {
+        Staff staff = appUtil.getLoggedInStaff();
+        if (!(staff.getRole().equals(Role.ADMIN)) || staff.getRole().equals(Role.STAFF)) {
             throw new ValidationException("You are not permitted to perform this operation");
         }
-//        Optional<Orders> order = Optional.ofNullable(orderRepository.findByClientCodeAndReferenceNumber(clientCode, referenceNumber)
         Optional<Orders> order = Optional.ofNullable(orderRepository.findByReferenceNumber(referenceNumber))
                 .orElseThrow(() -> new ResourceNotFoundException("Order with the reference number " + referenceNumber + " does not exist"));
 
@@ -232,20 +235,29 @@ public class StaffServiceImplementation implements StaffService {
         if(order.get().getOrderStatus().equals(OrderStatus.CANCELLED))
             throw new UnsupportedOperationException("This order has been cancelled by the customer");
 
-        Optional<User> user1 = Optional.ofNullable(userRepository.findByStaffId(dispatchOrderDto.getRiderId())
+        Optional<Staff> staff1 = Optional.ofNullable(staffRepository.findByStaffId(dispatchOrderDto.getRiderId())
                 .orElseThrow(() -> new UserNotFoundException("Rider does not exist! Check the rider Id")));
-        if(!(user1.get().getRiderStatus().equals(RiderStatus.Free)))
+        if(!(staff1.get().getRiderStatus().equals(RiderStatus.Free)))
             throw new RiderUnavailableException("This rider is currently engaged. Kindly assign another rider to this order.");
 
-        order.get().setRiderPhoneNumber(user1.get().getPhoneNumber());
-        order.get().setRiderName(user1.get().getFirstName() + " " + user1.get().getLastName());
+        Boolean reAssignRider; // implement this for double reassigning of a rider to a new order
+
+        Optional<Bike> bike = Optional.ofNullable(bikeRepository.findByStaffId(staff1.get().getStaffId())
+                .orElseThrow(() -> new ResourceNotFoundException("Bike not found!")));
+
+        order.get().setBikeNumber(bike.get().getBikeNumber());
+        order.get().setRiderPhoneNumber(staff1.get().getPhoneNumber());
+        order.get().setRiderName(staff1.get().getFirstName() + " " + staff1.get().getLastName());
         order.get().setRiderId(dispatchOrderDto.getRiderId());
         order.get().setOrderStatus(OrderStatus.INPROGRESS);
-        order.get().setPrice(600.00);
+        order.get().setPrice(120);
         orderRepository.save(order.get());
 
-        user1.get().setRiderStatus(RiderStatus.Engaged);
-        userRepository.save(user1.get());
+
+        int x = staff1.get().getRidesCount();
+        staff1.get().setRidesCount(x + 1);
+        staff1.get().setRiderStatus(RiderStatus.Engaged);
+        staffRepository.save(staff1.get());
 
         DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy  hh:mm:ss");
         String currentDateTime = dateFormat.format(new Date());
@@ -278,6 +290,7 @@ public class StaffServiceImplementation implements StaffService {
                     "Item type: " + order.get().getItemType() + '\n' +
                     "Item quantity: " + order.get().getItemQuantity() + '\n' +
                     "Date: " + order.get().getCreatedAt() + '\n' +
+                    "Bike number: " + order.get().getBikeNumber() + '\n' +
                     "Rider name: " + order.get().getRiderName() + '\n' +
                     "Rider Phone Number: " + order.get().getReceiverPhoneNumber() + '\n' +
                     "Current Date: " + currentDateTime + '\n' +
@@ -297,6 +310,7 @@ public class StaffServiceImplementation implements StaffService {
                     "Item type: " + order.get().getItemType() + '\n' +
                     "Item quantity: " + order.get().getItemQuantity() + '\n' +
                     "Date: " + order.get().getCreatedAt() + '\n' +
+                    "Bike number: " + order.get().getBikeNumber() + '\n' +
                     "Rider name: " + order.get().getRiderName() + '\n' +
                     "Rider Phone Number: " + order.get().getReceiverPhoneNumber());}
         else if (order.get().getThirdPartyPickUp().equals(false) && order.get().getPaymentType().equals(PaymentType.BankTransfer)) {
@@ -311,6 +325,7 @@ public class StaffServiceImplementation implements StaffService {
                     "Item type: " + order.get().getItemType() + '\n' +
                     "Item quantity: " + order.get().getItemQuantity() + '\n' +
                     "Date: " + order.get().getCreatedAt() + '\n' +
+                    "Bike number: " + order.get().getBikeNumber() + '\n' +
                     "Rider name: " + order.get().getRiderName() + '\n' +
                     "Rider Phone Number: " + order.get().getReceiverPhoneNumber() + '\n' +
                     "Current Date: " + currentDateTime + '\n' +
@@ -328,6 +343,7 @@ public class StaffServiceImplementation implements StaffService {
                     "Receiver phone number: " + order.get().getReceiverPhoneNumber() + '\n' +
                     "Item type: " + order.get().getItemType() + '\n' +
                     "Item quantity: " + order.get().getItemQuantity() + '\n' +
+                    "Bike number: " + order.get().getBikeNumber() + '\n' +
                     "Rider name: " + order.get().getRiderName() + '\n' +
                     "Rider Phone Number: " + order.get().getReceiverPhoneNumber() + '\n' +
                     "Current Date: " + currentDateTime);
@@ -345,7 +361,7 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override // tested and is working fine
     public ResponseEntity<ApiResponse> registerABike(RegisterBikeDto registerBikeDto) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.STAFF))) {
             throw new ValidationException("You are not authorised to perform this operation.");
         }
@@ -364,33 +380,33 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override  //tested and is working fine
     public ResponseEntity<ApiResponse> registerARider(RegisterRiderDto registerRiderDto) {
-        User user = appUtil.getLoggedInUser();
-        if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))) {
+        Staff staff = appUtil.getLoggedInStaff();
+        if (!(staff.getRole().equals(Role.ADMIN) || (staff.getRole().equals(Role.STAFF)))) {
             throw new ValidationException("You are not authorised to perform this operation.");
         }
         Long staffNumber = appUtil.generateRandomCode();
-        User user1 = new User();
-        user1.setRole(Role.RIDER);
-        user1.setFirstName(registerRiderDto.getFirstName());
-        user1.setLastName(registerRiderDto.getLastName());
-        user1.setAddress(registerRiderDto.getAddress());
-        user1.setStaffId(staffNumber);
-        user1.setPhoneNumber(registerRiderDto.getPhoneNumber());
-        user1.setRiderStatus(RiderStatus.Free);
-        user1.setActive(true);
-        userRepository.save(user1);
-
+        Staff staff1 = new Staff();
+        staff1.setRole(Role.RIDER);
+        staff1.setFirstName(registerRiderDto.getFirstName());
+        staff1.setLastName(registerRiderDto.getLastName());
+        staff1.setAddress(registerRiderDto.getAddress());
+        staff1.setStaffId(staffNumber);
+        staff1.setPhoneNumber(registerRiderDto.getPhoneNumber());
+        staff1.setRiderStatus(RiderStatus.Free);
+        staff1.setRidesCount(0);
+        staff1.setActive(true);
+        staffRepository.save(staff1);
         return ResponseEntity.ok(new ApiResponse<>("Success", "Rider registration successful", "Your Rider ID is: " + staffNumber));
     }
 
     @Override //tested and is working fine
     public ApiResponse assignBikeToRider(AssignRiderToBikeDto assignRiderToBikeDto) {
 
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
-        User user1 = userRepository.findByStaffId(assignRiderToBikeDto.getStaffId())
+        Staff user1 = staffRepository.findByStaffId(assignRiderToBikeDto.getStaffId())
                 .orElseThrow(() -> new UserNotFoundException("This user does not exist"));
 
         if (!user1.getRole().equals(Role.RIDER))
@@ -410,7 +426,7 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override //tested and is working fine
     public Optional<Orders> viewAnOrderByReferenceNumber(String referenceNumber) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
             throw new ValidationException("You are not authorised to perform this operation.");
 
@@ -421,24 +437,24 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override //tested and is working fine
     public List<Orders> viewAllOrdersByStatus(OrderStatus orderStatus) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
             throw new ValidationException("You are not authorised to perform this operation.");
         return new ArrayList<>(orderRepository.findByOrderStatus(orderStatus));
     }
 
     @Override //tested and is working fine
-    public List<User> viewAllRidersByStatus(RiderStatus riderStatus) {
-        User user = appUtil.getLoggedInUser();
+    public List<Staff> viewAllRidersByStatus(RiderStatus riderStatus) {
+        Staff user = appUtil.getLoggedInStaff();
         if (!user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF)))
             throw new ValidationException("You are not allowed to perform this operation");
 
-        return new ArrayList<>(userRepository.findByRiderStatus(riderStatus));
+        return new ArrayList<>(staffRepository.findByRiderStatus(riderStatus));
     }
 
     @Override //tested and is working fine
     public Integer countRidesPerRider(Long staffId) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.RIDER) || (user.getRole().equals(Role.SUPER_ADMIN))))) {
             throw new ValidationException("You are not authorised to perform this operation.");
         }
@@ -447,13 +463,13 @@ public class StaffServiceImplementation implements StaffService {
     }
 
     @Override //Tested and is working fine. Format the <User> return type to return relevant staff information.
-    public Optional<User> viewStaffDetails(Long staffId) {
-        User user = appUtil.getLoggedInUser();
+    public Optional<Staff> viewStaffDetails(Long staffId) {
+        Staff user = appUtil.getLoggedInStaff();
 
         if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.SUPER_ADMIN))))
             throw new ValidationException("You are not authorised to perform this operation!");
 
-        Optional<User> user1 = userRepository.findByStaffId(staffId);
+        Optional<Staff> user1 = staffRepository.findByStaffId(staffId);
         if(user1.get().getRole().equals(Role.SUPER_ADMIN)) {
             throw new ValidationException("You cannot perform this operation on this user!");}
         return user1;
@@ -461,26 +477,26 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override  //Tested and is working fine
     public ResponseEntity<ApiResponse> deleteStaff(Long staffId) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (user.getRole().equals(Role.SUPER_ADMIN))
             throw new ValidationException("You are not authorised to perform this operation!");
 
-        Optional<User> user1 = userRepository.findByStaffId(staffId);
+        Optional<Staff> user1 = staffRepository.findByStaffId(staffId);
         if (user1.isEmpty()) {
             throw new ValidationException("Staff number incorrect!");
         }
-        userRepository.delete(user1.get());
+        staffRepository.delete(user1.get());
         return ResponseEntity.ok(new ApiResponse<>("Success", "Staff has been deleted!", null));
     }
 
     @Override //Tested and is working fine
     public ResponseEntity<ApiResponse> createAdmin(Long staffId) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.SUPER_ADMIN))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
 
-        Optional<User> user1 = userRepository.findByStaffId(staffId);
+        Optional<Staff> user1 = staffRepository.findByStaffId(staffId);
         if (user1.isEmpty())
             throw new UserNotFoundException("There is no staff with this Id!");
 
@@ -492,15 +508,13 @@ public class StaffServiceImplementation implements StaffService {
 
         if (user1.get().getRole().equals(Role.STAFF))
             user1.get().setRole(Role.ADMIN);
-        userRepository.save(user1.get());
-
-        userRepository.save(user1.get());
+        staffRepository.save(user1.get());
         return ResponseEntity.ok(new ApiResponse<>("Success", "New admin created", null));
     }
 
     @Override //Tested and is working fine
     public List<Orders> viewAllOrders() {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.SUPER_ADMIN) || (user.getRole().equals(Role.ADMIN)))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
@@ -509,16 +523,17 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override //tested and is working fine
     public List<Orders> clientWeeklyOrderSummary(WeeklyOrderSummaryDto weeklyOrderSummaryDto) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.ADMIN) || (user.getRole().equals(Role.STAFF))))
             throw new ValidationException("You are not authorised to perform this operation");
 
-        return new ArrayList<>(orderRepository.findAllByClientCodeAndCreatedAtBetween(weeklyOrderSummaryDto.getClientCode(), weeklyOrderSummaryDto.getStartDate(), weeklyOrderSummaryDto.getEndDate()));
+        return new ArrayList<>(orderRepository.findAllByClientCodeAndCreatedAtBetween(weeklyOrderSummaryDto.getClientCode(),
+                weeklyOrderSummaryDto.getStartDate(), weeklyOrderSummaryDto.getEndDate()));
     }
 
     @Override //tested and is working fine
     public List<Orders> viewAllOrdersToday() {
-    User user = appUtil.getLoggedInUser();
+    Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.SUPER_ADMIN) || (user.getRole().equals(Role.ADMIN)))) {
             throw new ValidationException("You are not authorised to perform this operation");
     }
@@ -528,7 +543,7 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override //tested and is working fine
     public List<Orders> viewAllOrdersInAMonth(OrdersHistoryDto ordersHistoryDto) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.SUPER_ADMIN) || user.getRole().equals(Role.ADMIN))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
@@ -537,10 +552,81 @@ public class StaffServiceImplementation implements StaffService {
 
     @Override //tested and is working fine
     public List<Orders> viewAllOrdersInAWeek(OrdersHistoryDto ordersHistoryDto) {
-        User user = appUtil.getLoggedInUser();
+        Staff user = appUtil.getLoggedInStaff();
         if (!(user.getRole().equals(Role.SUPER_ADMIN) || user.getRole().equals(Role.ADMIN))) {
             throw new ValidationException("You are not authorised to perform this operation");
         }
         return orderRepository.findAllByCreatedAtBetween(ordersHistoryDto.getStartDate(), ordersHistoryDto.getEndDate());
     }
+
+    @Override// this method is to count the deliveries of a rider over a time frame (could be weekly, daily, or monthly). tested and it's working fine
+    public int viewDeliveryCountOfRider(Long riderId, RidersDeliveryCountPerMonthDto ridersDeliveryCountPerMonthDto) {
+        Staff staff = appUtil.getLoggedInStaff();
+        if(!staff.getRole().equals(Role.ADMIN))
+            throw new ValidationException("You are not permitted to perform this operation");
+        List<Orders> ridesList = new ArrayList<>(orderRepository.findAllByRiderIdAndCreatedAtBetween(riderId,
+                ridersDeliveryCountPerMonthDto.getStartDate(), ridersDeliveryCountPerMonthDto.getEndDate()));
+        return ridesList.size();
+    }
+
+    @Override
+    public BigDecimal weeklyBill(Long clientCode, PeriodicBillDto periodicBillDto) {
+        Staff staff = appUtil.getLoggedInStaff();
+        if (!staff.getRole().equals(Role.ADMIN))
+            throw new ValidationException("You are not permitted to perform this operation");
+
+        return orderRepository.findSumOfOrderPrices(clientCode, periodicBillDto.getStartDate(), periodicBillDto.getEndDate());
+    }
+
+    public List<Orders> generatePeriodicOrderDetailsPdf (Long clientCode, HttpServletResponse response, PeriodicBillDto periodicBillDto) throws IOException{
+        Staff staff = appUtil.getLoggedInStaff();
+
+        List<Orders> order = orderRepository.findOrderDetails(clientCode, periodicBillDto.getStartDate(), periodicBillDto.getEndDate());
+
+        BigDecimal totalBill = orderRepository.findSumOfOrderPrices(clientCode, periodicBillDto.getStartDate(), periodicBillDto.getEndDate());
+
+        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy  hh:mm:ss");
+        String currentDateTime = dateFormat.format(new Date());
+
+        Document document = new Document(PageSize.A4);
+        PdfWriter.getInstance(document, response.getOutputStream());
+        document.open();
+
+        Font font = FontFactory.getFont(FontFactory.COURIER_BOLD);
+        font.setColor(Color.BLACK);
+        font.setSize(15);
+        Paragraph p1 = new Paragraph("Total Orders Invoice", font);
+        p1.setAlignment(Paragraph.ALIGN_CENTER);
+
+        Paragraph p2 = new Paragraph();
+        p2.setAlignment(Paragraph.ALIGN_LEFT);
+        p2.setFont(FontFactory.getFont(FontFactory.COURIER, 10, Color.black));
+        p2.setMultipliedLeading(2);
+
+        Font font2 = FontFactory.getFont(FontFactory.COURIER_BOLD);
+        font2.setColor(Color.RED);
+        font2.setSize(15);
+        Paragraph p3 = new Paragraph("Grand Total: " + totalBill, font2);
+        p3.setAlignment(Paragraph.ALIGN_CENTER);
+
+        for (Orders oneOrder : order) {
+            p2.add( "Order Date: " + oneOrder.getCreatedAt() + '\n' +
+                    "ReferenceNumber: " + oneOrder.getReferenceNumber() + '\n' +
+                    "ClientId: " + oneOrder.getClientCode() + '\n' +
+                    "Client name: " + oneOrder.getCustomerFirstName() + '\n' +
+                    "Pick-up address: " + oneOrder.getPickUpAddress() + '\n' +
+                    "Item: " + oneOrder.getItemType() + '\n' +
+                    "Receiver address: " + oneOrder.getDeliveryAddress() + '\n' +
+                    "Price: " + oneOrder.getPrice() + '\n' +
+                    "Order Status: " + oneOrder.getOrderStatus() + '\n' + " " + '\n');}
+
+        document.add(p1);
+        document.add(p2);
+        document.add(p3);
+        document.close();
+        return order;
+    }
+
+
+
 }

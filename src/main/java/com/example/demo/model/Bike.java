@@ -18,7 +18,9 @@ public class Bike extends Base{
     private String make;
     private double price;
     private String images;
+    private Long staffId;
     private String riderName;
     private String riderPhoneNumber;
     private String riderAddress;
+
 }

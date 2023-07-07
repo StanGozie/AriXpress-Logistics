@@ -28,7 +28,7 @@ public class GmailService implements EmailService{
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
 
         try {
-            helper.setFrom("chigoziestanleyenyoghasi@gmail.com", "AriXpress Logistics");
+            helper.setFrom("arixpresslogistics@gmail.com", "AriXpress Logistics");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(message, true);
@@ -39,6 +39,5 @@ public class GmailService implements EmailService{
             LOGGER.error("An error occurred while sending an email to address : "
                     + to + "; error: " + e.getMessage());
         }
-
     }
 }

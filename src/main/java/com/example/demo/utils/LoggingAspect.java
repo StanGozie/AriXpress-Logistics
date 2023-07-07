@@ -17,7 +17,7 @@ public class LoggingAspect {
      * Logs any method in the services package before it is executed
      * @param joinPoint: has the details of the method being executed
      */
-    @Before("execution (* com.example.demo.AriXpressLogisticsApplication.service.*.*(..))")
+    @Before("execution (* com.example.demo.service.*.*(..))")
     public void logBefore(JoinPoint joinPoint) {
         logger.info(joinPoint.getSignature().getName() + " method started. [" +joinPoint.getSignature().getDeclaringTypeName()+"]");
     }
@@ -26,12 +26,12 @@ public class LoggingAspect {
      * Logs any method in the services package that executes successfully
      * @param joinPoint: has the details of the method being executed
      */
-    @AfterReturning("execution (* com.example.demo.AriXpressLogisticsApplication.*.*(..))")
+    @AfterReturning("execution (* com.example.demo.service.*.*(..))")
     public void logAfter(JoinPoint joinPoint) {
         logger.info(joinPoint.getSignature().getName() + " method successfully executed. [" +joinPoint.getSignature().getDeclaringTypeName()+"]");
     }
 
-    @AfterReturning("execution (* com.example.demo.AriXpressLogisticsApplication.utils.*.*(..))")
+    @AfterReturning("execution (* com.example.demo.repository.*.*(..))")
     public void logAfter1(JoinPoint joinPoint) {
         logger.info(joinPoint.getSignature().getName() + " method successfully executed. [" +joinPoint.getSignature().getDeclaringTypeName()+"]");
     }
@@ -40,7 +40,7 @@ public class LoggingAspect {
      * Logs any method that created or updated an entity successfully
      * @param joinPoint: has the details of the method being executed
      */
-    @AfterReturning("execution (* com.example.demo.AriXpressLogisticsApplication.repository.*.save(..))")
+    @AfterReturning("execution (* com.example.demo.repository.*.save(..))")
     public void logEntityCreation(JoinPoint joinPoint) {
         logger.info(joinPoint.getSignature().getName() + " method completed successfully. [" +joinPoint.getSignature().getDeclaringTypeName()+"]");
     }

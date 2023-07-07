@@ -37,6 +37,7 @@ public class Orders extends Base{
     private String thirdPartyAddress;
     private String itemType;
     private int itemQuantity;
+    private String bikeNumber;
     private String riderName;
     private Long riderId;
     private String riderPhoneNumber;

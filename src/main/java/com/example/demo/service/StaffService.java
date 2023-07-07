@@ -5,30 +5,28 @@ import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.enums.RiderStatus;
 import com.example.demo.model.Orders;
-import com.example.demo.model.User;
+import com.example.demo.model.Staff;
 import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 public interface StaffService {
 
-    ResponseEntity<ApiResponse> signUp (SignUpDto signUpDto);
+    ResponseEntity<ApiResponse> staffSignUp (SignUpDto signUpDto);
 
-    ResponseEntity<ApiResponse> completeRegistration (CompleteRegistrationDto completeRegistrationDto);
+    ResponseEntity<ApiResponse> staffCompleteRegistration (CompleteRegistrationDto completeRegistrationDto);
 
     ResponseEntity<ApiResponse> updateStaffInformation (StaffRelevantDetailsDto staffRelevantDetailsDto);
 
-    ResponseEntity<String> login (LoginDto loginDto);
+    ResponseEntity<String> staffLogin (LoginDto loginDto);
 
-    ResponseEntity<ApiResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto);
+    ResponseEntity<ApiResponse> staffForgotPassword(ForgotPasswordDto forgotPasswordDto);
 
-    ResponseEntity<ApiResponse> resetPassword (ResetPasswordDto resetPasswordDto);
+    ResponseEntity<ApiResponse> staffResetPassword (ResetPasswordDto resetPasswordDto);
 
     ResponseEntity<ApiResponse> changePassword (ChangePasswordDto changePasswordDto);
 
@@ -44,11 +42,11 @@ public interface StaffService {
 
     List<Orders> viewAllOrdersByStatus (OrderStatus orderStatus);
 
-    List<User> viewAllRidersByStatus (RiderStatus riderStatus);
+    List<Staff> viewAllRidersByStatus (RiderStatus riderStatus);
 
     Integer countRidesPerRider(Long staffId);
 
-    Optional<User> viewStaffDetails(Long staffId);
+    Optional<Staff> viewStaffDetails(Long staffId);
 
     ResponseEntity<ApiResponse> deleteStaff (Long staffId);
 
@@ -61,9 +59,11 @@ public interface StaffService {
 
     List<Orders> viewAllOrdersInAMonth (OrdersHistoryDto ordersHistoryDto);
 
-    public List<Orders> viewAllOrdersInAWeek(OrdersHistoryDto ordersHistoryDto);
+    List<Orders> viewAllOrdersInAWeek(OrdersHistoryDto ordersHistoryDto);
+    int viewDeliveryCountOfRider (Long riderId, RidersDeliveryCountPerMonthDto ridersDeliveryCountPerMonthDto);
+    BigDecimal weeklyBill (Long clientCode, PeriodicBillDto periodicBillDto);
+    List<Orders> generatePeriodicOrderDetailsPdf (Long clientCode, HttpServletResponse response, PeriodicBillDto periodicBillDto) throws IOException;
 
-
-    }
+}
 
 

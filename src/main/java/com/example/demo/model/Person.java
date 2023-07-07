@@ -19,12 +19,12 @@ public abstract class Person extends Base{
 
     private String firstName;
     private String lastName;
-    private String companyName;
     private String email;
     private String password;
     private String phoneNumber;
     private String confirmationToken;
     @Enumerated(EnumType.STRING)
     private Gender gender;
+    private String address;
     private String state;
 }

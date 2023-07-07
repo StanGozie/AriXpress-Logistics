@@ -23,14 +23,20 @@ public class SecurityConfiguration {
     //    @Autowired
     @Qualifier("customAuthenticationEntryPoint")
     AuthenticationEntryPoint authEntryPoint;
-    private final String path = "/api/v1/auth/staff";
-    private final String path2 = "/api/v1/auth/client";
+    private final String path = "/api/v1/auth/";
     private final String[] AUTH_WHITELIST = {
             "/v3/api-docs/**",  "/configuration/**", "/swagger-ui/**",  "/webjars/**",
-            path + "/forgot-password/**", path + "/reset-password/**", path + "/verify-token/**", path + "/complete-registration/**",
-            path + "/sign-up", path + "/login", path + "/forgot-password", path + "/reset-password/**", path + "/complete-registration",
-            path2 + "/complete-registration/**", path2 + "/sign-up", path2 + "/login", path2 + "/forgot-password", path2 + "/reset-password/**",
-            path2 + "/complete-registration", path2 + "/corporate/complete-business-registration"
+            path + "staff/forgot-password/**",
+            path + "staff/reset-password/**",
+            path + "staff/sign-up",
+            path + "staff/login",
+            path + "staff/complete-registration",
+            path + "client/sign-up",
+            path + "client/login",
+            path + "client/complete-registration/**",
+            path + "client/forgot-password",
+            path + "client/reset-password/**",
+            path + "client/corporate/complete-business-registration"
     };
 //"/swagger*/**",
     private final JwtAuthFilter jwtAuthFilter;
